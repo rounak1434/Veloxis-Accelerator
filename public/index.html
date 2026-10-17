@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus Download Accelerator</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- S01: Main Dashboard Header & Toolbar -->
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+      <span>Nexus Accelerator</span>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn btn-primary" id="btn-toolbar-add" title="Add URL (Ctrl+N)">
+        <span>+</span> Add URL
+      </button>
+      <button class="btn btn-secondary" id="btn-toolbar-resume" title="Resume Selected Download">
+        ▶ Resume
+      </button>
+      <button class="btn btn-secondary" id="btn-toolbar-pause" title="Pause Selected Download">
+        ⏸ Pause
+      </button>
+      <button class="btn btn-secondary" id="btn-toolbar-pause-all" title="Pause All Active Downloads">
+        ⏹ Pause All
+      </button>
+      <button class="btn btn-secondary" id="btn-toolbar-batch" title="Batch Download Wizard">
+        📑 Batch
+      </button>
+      <button class="btn btn-secondary" id="btn-toolbar-scheduler" title="Queue Scheduler">
+        ⏰ Scheduler
+      </button>
+      <button class="btn btn-secondary" id="btn-toolbar-grabber" title="Site Grabber / Spider">
+        🕸 Spider
+      </button>
+      <button class="btn btn-secondary" id="btn-toolbar-media-sim" title="Simulate Web Media Grabber">
+        🎬 Media Grabber
+      </button>
+      <button class="btn btn-secondary" id="btn-toolbar-options" title="Global Preferences">
+        ⚙ Settings
+      </button>
+    </div>
+  </header>
+
+  <!-- App Body -->
+  <div class="app-body">
+    <!-- S01: Category Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-section">Categories</div>
+      <ul class="category-list" id="category-list">
+        <li class="category-item active" data-category="all">
+          <span class="category-label">📁 All Downloads</span>
+          <span class="badge" id="count-all">0</span>
+        </li>
+        <li class="category-item" data-category="downloading">
+          <span class="category-label">⚡ Downloading</span>
+          <span class="badge" id="count-downloading">0</span>
+        </li>
+        <li class="category-item" data-category="completed">
+          <span class="category-label">✅ Completed</span>
+          <span class="badge" id="count-completed">0</span>
+        </li>
+        <li class="category-item" data-category="paused">
+          <span class="category-label">⏸ Paused / Queued</span>
+          <span class="badge" id="count-paused">0</span>
+        </li>
+      </ul>
+
+      <div class="sidebar-section" style="margin-top: 10px;">File Types</div>
+      <ul class="category-list">
+        <li class="category-item" data-category="cat-comp">
+          <span class="category-label">🗜 Compressed</span>
+          <span class="badge" id="count-cat-comp">0</span>
+        </li>
+        <li class="category-item" data-category="cat-doc">
+          <span class="category-label">📄 Documents</span>
+          <span class="badge" id="count-cat-doc">0</span>
+        </li>
+        <li class="category-item" data-category="cat-mus">
+          <span class="category-label">🎵 Music</span>
+          <span class="badge" id="count-cat-mus">0</span>
+        </li>
+        <li class="category-item" data-category="cat-prog">
+          <span class="category-label">💿 Programs</span>
+          <span class="badge" id="count-cat-prog">0</span>
+        </li>
+        <li class="category-item" data-category="cat-vid">
+          <span class="category-label">🎬 Video</span>
+          <span class="badge" id="count-cat-vid">0</span>
+        </li>
+      </ul>
+
+      <div class="sidebar-section" style="margin-top: 10px;">Download Queues</div>
+      <ul class="category-list" id="queue-list-sidebar">
+        <li class="category-item" data-queue="queue-main">
+          <span class="category-label">📋 Main Queue</span>
+          <span class="badge" id="count-queue-main">0</span>
+        </li>
+        <li class="category-item" data-queue="queue-night">
+          <span class="category-label">🌙 Night Schedule</span>
+          <span class="badge" id="count-queue-night">0</span>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- S01: Main View Table -->
+    <main class="main-view">
+      <div class="view-controls">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-input" placeholder="Search downloads...">
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary btn-sm" id="btn-speed-limiter-toggle">
+            ⚡ Speed Limit: <span id="speed-limit-label">Off</span>
+          </button>
+          <button class="btn btn-danger btn-sm" id="btn-delete-selected" style="display: none;">
+            🗑 Delete
+          </button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="download-table">
+          <thead>
+            <tr>
+              <th style="width: 32px;"><input type="checkbox" id="check-all"></th>
+              <th>File Name</th>
+              <th>Size</th>
+              <th>Status</th>
+              <th>Progress</th>
+              <th>Speed</th>
+              <th>Time Left</th>
+              <th>Date Added</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tasks-tbody">
+            <!-- Dynamic rows will render here -->
+          </tbody>
+        </table>
+
+        <!-- Empty State -->
+        <div id="empty-state" style="display: none; padding: 60px 20px; text-align: center; color: var(--color-text-muted);">
+          <div style="font-size: 40px; margin-bottom: 12px;">📥</div>
+          <div style="font-size: 16px; font-weight: 600; color: var(--color-text); margin-bottom: 6px;">No downloads found</div>
+          <div>Click "+ Add URL" or use the browser extension to start downloading at maximum speed.</div>
+        </div>
+      </div>
+
+      <!-- Bottom Status Bar -->
+      <footer class="status-bar">
+        <div class="status-stat">
+          <div class="stat-item">
+            <span>Transfer Rate:</span>
+            <span class="stat-badge" id="stat-total-speed">0.0 KB/s</span>
+          </div>
+          <div class="stat-item">
+            <span>Active Tasks:</span>
+            <span class="stat-badge" id="stat-active-count">0</span>
+          </div>
+        </div>
+        <div>
+          <span>Engine: Dynamic Multipart (8x Chunks)</span>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <!-- S02: Add URL Modal -->
+  <div class="modal-overlay" id="modal-add-url">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Enter New Address to Download</div>
+        <button class="modal-close" data-close="modal-add-url">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="add-url-input">Address (URL)</label>
+          <input type="url" id="add-url-input" class="form-input" placeholder="https://example.com/file.zip" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="add-referrer-input">Referrer (Optional)</label>
+          <input type="text" id="add-referrer-input" class="form-input" placeholder="https://example.com/download-page">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="add-category-select">Category</label>
+          <select id="add-category-select" class="form-select">
+            <option value="cat-comp">Compressed (.zip, .rar, .7z)</option>
+            <option value="cat-doc">Documents (.pdf, .docx)</option>
+            <option value="cat-mus">Music (.mp3, .flac)</option>
+            <option value="cat-prog">Programs (.exe, .msi)</option>
+            <option value="cat-vid">Video (.mp4, .mkv)</option>
+            <option value="cat-other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-add-url">Cancel</button>
+        <button class="btn btn-secondary" id="btn-probe-url">Probe File</button>
+        <button class="btn btn-primary" id="btn-confirm-add-url">Start Download</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S03: Download File Info Modal -->
+  <div class="modal-overlay" id="modal-file-info">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Download File Info</div>
+        <button class="modal-close" data-close="modal-file-info">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background-color: var(--color-surface-raised); border: 1px solid var(--color-border); padding: 12px; border-radius: var(--radius-md);">
+          <div style="font-weight: 600; font-size: 15px; margin-bottom: 4px;" id="info-file-name">file.zip</div>
+          <div style="font-size: 12px; color: var(--color-text-muted); word-break: break-all;" id="info-url">https://example.com/file.zip</div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <span class="form-label">File Size:</span>
+            <span style="font-weight: 600; font-family: var(--font-mono);" id="info-size">Calculating...</span>
+          </div>
+          <div class="form-group">
+            <span class="form-label">Resumable:</span>
+            <span id="info-resumable" class="status-chip status-completed">Yes (Range supported)</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="info-save-dir">Save Directory</label>
+          <input type="text" id="info-save-dir" class="form-input">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="info-queue-select">Download Queue</label>
+          <select id="info-queue-select" class="form-select">
+            <option value="queue-main">Main Download Queue</option>
+            <option value="queue-night">Night Schedule Queue</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-file-info">Cancel</button>
+        <button class="btn btn-secondary" id="btn-info-queue-later">Download Later</button>
+        <button class="btn btn-primary" id="btn-info-start-now">Start Download</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S04: Active Download Progress Dialog -->
+  <div class="modal-overlay" id="modal-progress">
+    <div class="modal-card" style="max-width: 650px;">
+      <div class="modal-header">
+        <div class="modal-title" id="progress-modal-title">Downloading: file.zip</div>
+        <button class="modal-close" data-close="modal-progress">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+          <span style="font-size: 20px; font-weight: 700; font-family: var(--font-mono);" id="modal-transfer-rate">0 KB/s</span>
+          <span style="color: var(--color-text-muted);" id="modal-eta">Time left: --</span>
+        </div>
+
+        <!-- Overall Progress -->
+        <div style="margin: 8px 0;">
+          <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+            <span id="modal-downloaded-ratio">0 MB of 0 MB</span>
+            <span style="font-weight: 600;" id="modal-percentage">0%</span>
+          </div>
+          <div class="progress-container" style="width: 100%; height: 12px;">
+            <div id="modal-progress-fill" style="width: 0%; background: linear-gradient(90deg, #3b82f6, #06b6d4); height: 100%;"></div>
+          </div>
+        </div>
+
+        <!-- S04: Per-Segment Multi-Thread Connection Visualizer -->
+        <div style="margin-top: 10px;">
+          <div class="form-label" style="margin-bottom: 6px;">Dynamic Segmentation Threads (8 Concurrency Chunks)</div>
+          <div class="segment-grid" id="modal-segments-grid">
+            <!-- Render 8 chunk rows -->
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px; font-size: 12px;">
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+            <input type="checkbox" id="modal-speed-limit-check">
+            <span>Apply Speed Limiter (500 KB/s)</span>
+          </label>
+          <button class="btn btn-ghost btn-sm" id="btn-open-refresh-from-progress">Refresh Expired Link</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btn-modal-pause-toggle">Pause</button>
+        <button class="btn btn-danger" id="btn-modal-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S05: Download Complete Dialog -->
+  <div class="modal-overlay" id="modal-complete">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Download Complete</div>
+        <button class="modal-close" data-close="modal-complete">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align: center; padding: 28px 20px;">
+        <div style="font-size: 48px; margin-bottom: 12px;">🎉</div>
+        <div style="font-size: 18px; font-weight: 700; margin-bottom: 4px;" id="complete-file-name">file.zip</div>
+        <div style="font-size: 13px; color: var(--color-text-muted); margin-bottom: 16px;" id="complete-details">12.5 MB • 8 segments reassembled</div>
+
+        <div style="background-color: var(--color-surface-raised); padding: 10px; border-radius: var(--radius-md); font-family: var(--font-mono); font-size: 11px; word-break: break-all; margin-bottom: 16px; border: 1px solid var(--color-border);">
+          <span style="color: var(--color-text-muted);">SHA256: </span><span id="complete-checksum">e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</span>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: center;">
+          <button class="btn btn-primary" id="btn-complete-open-file">Open File</button>
+          <button class="btn btn-secondary" id="btn-complete-open-folder">Open Folder</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-complete">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S06: Global Options & Preferences Modal -->
+  <div class="modal-overlay" id="modal-options">
+    <div class="modal-card" style="max-width: 640px;">
+      <div class="modal-header">
+        <div class="modal-title">Settings & Configuration</div>
+        <button class="modal-close" data-close="modal-options">&times;</button>
+      </div>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="tab-general">General</button>
+        <button class="tab-btn" data-tab="tab-filetypes">File Types</button>
+        <button class="tab-btn" data-tab="tab-connection">Connection</button>
+        <button class="tab-btn" data-tab="tab-folders">Save To</button>
+      </div>
+      <div class="modal-body">
+        <div class="tab-content" id="tab-general">
+          <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" id="opt-clipboard-monitor" checked>
+              <span>Automatically monitor clipboard for downloadable URLs</span>
+            </label>
+          </div>
+          <div class="form-group" style="margin-top: 10px;">
+            <label style="display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" id="opt-browser-integration" checked>
+              <span>Enable browser extension Native Messaging integration</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="tab-content" id="tab-filetypes" style="display: none;">
+          <div class="form-group">
+            <label class="form-label" for="opt-file-extensions">Automatically Capture Extensions</label>
+            <textarea id="opt-file-extensions" class="form-textarea" rows="4"></textarea>
+            <span class="form-help">Separate extensions with spaces or commas (e.g. zip rar mp4 iso exe)</span>
+          </div>
+        </div>
+
+        <div class="tab-content" id="tab-connection" style="display: none;">
+          <div class="form-group">
+            <label class="form-label" for="opt-max-connections">Default Segmentation Threads per Download</label>
+            <select id="opt-max-connections" class="form-select">
+              <option value="1">1 (Single stream)</option>
+              <option value="4">4 threads</option>
+              <option value="8" selected>8 threads (Recommended)</option>
+              <option value="16">16 threads</option>
+              <option value="32">32 threads (Maximum)</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-top: 10px;">
+            <label class="form-label" for="opt-speed-limit-val">Speed Limiter Throttle (KB/s)</label>
+            <input type="number" id="opt-speed-limit-val" class="form-input" value="500">
+          </div>
+        </div>
+
+        <div class="tab-content" id="tab-folders" style="display: none;">
+          <div class="form-group">
+            <label class="form-label" for="opt-default-dir">Default Download Directory</label>
+            <input type="text" id="opt-default-dir" class="form-input">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-options">Cancel</button>
+        <button class="btn btn-primary" id="btn-save-settings">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S07: Scheduler & Queue Manager Modal -->
+  <div class="modal-overlay" id="modal-scheduler">
+    <div class="modal-card" style="max-width: 600px;">
+      <div class="modal-header">
+        <div class="modal-title">Scheduler & Queue Configuration</div>
+        <button class="modal-close" data-close="modal-scheduler">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="scheduler-queue-select">Select Queue</label>
+          <select id="scheduler-queue-select" class="form-select">
+            <option value="queue-main">Main Download Queue</option>
+            <option value="queue-night">Night Schedule Queue</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="sched-enable-timing">
+            <span>Enable Periodic Scheduled Time Window</span>
+          </label>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" for="sched-start-time">Start Time</label>
+            <input type="time" id="sched-start-time" class="form-input" value="02:00">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="sched-stop-time">Stop Time</label>
+            <input type="time" id="sched-stop-time" class="form-input" value="06:00">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="sched-concurrency">Maximum Concurrent Downloads in this Queue</label>
+          <input type="number" id="sched-concurrency" class="form-input" min="1" max="10" value="2">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="sched-post-action">When Queue Finishes</label>
+          <select id="sched-post-action" class="form-select">
+            <option value="none">Do nothing</option>
+            <option value="sleep">Put computer to sleep</option>
+            <option value="shutdown">Shut down computer</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btn-start-queue-now">Start Queue Now</button>
+        <button class="btn btn-primary" id="btn-save-scheduler">Save Schedule</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S08: In-Browser Media Grabber Floating Panel Simulator -->
+  <div class="modal-overlay" id="modal-media-grabber">
+    <div class="modal-card" style="max-width: 640px;">
+      <div class="modal-header">
+        <div class="modal-title">Browser Media Grabber Simulator</div>
+        <button class="modal-close" data-close="modal-media-grabber">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 13px; color: var(--color-text-muted);">
+          When you watch videos or listen to streams in your browser, the Nexus extension injects a floating pill directly on the video player with all detected stream resolutions.
+        </p>
+
+        <!-- Simulated Video Player Box -->
+        <div style="position: relative; width: 100%; height: 220px; background: #000; border-radius: var(--radius-md); overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid var(--color-border);">
+          <div style="font-size: 40px; color: rgba(255,255,255,0.4);">▶ Web Video Player</div>
+
+          <!-- The Floating Injected Grabber Pill -->
+          <div style="position: absolute; top: 14px; right: 14px; background: rgba(22, 27, 38, 0.95); border: 1px solid var(--color-accent); border-radius: var(--radius-pill); padding: 6px 14px; display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow-pop); cursor: pointer;" id="floating-grabber-pill">
+            <span style="color: var(--color-accent);">⚡</span>
+            <span style="font-weight: 600; font-size: 12px;">Download this video</span>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 10px;">
+          <label class="form-label">Available Detected Streams</label>
+          <div style="display: flex; flex-direction: column; gap: 6px;" id="media-streams-list">
+            <button class="btn btn-secondary" style="justify-content: space-between;" onclick="window.nexusApp.quickDownloadMedia('https://speed.hetzner.de/100MB.bin', 'Trailer_4K_1080p.mp4')">
+              <span>🎬 1080p Full HD (MP4 • 142 MB)</span>
+              <span class="badge">Download</span>
+            </button>
+            <button class="btn btn-secondary" style="justify-content: space-between;" onclick="window.nexusApp.quickDownloadMedia('https://speed.hetzner.de/100MB.bin', 'Trailer_720p.mp4')">
+              <span>🎬 720p HD (WebM • 78 MB)</span>
+              <span class="badge">Download</span>
+            </button>
+            <button class="btn btn-secondary" style="justify-content: space-between;" onclick="window.nexusApp.quickDownloadMedia('https://speed.hetzner.de/100MB.bin', 'Audio_Track.mp3')">
+              <span>🎵 High Quality Audio (MP3 • 8.4 MB)</span>
+              <span class="badge">Download</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-media-grabber">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S09: Batch / Pattern Download Wizard -->
+  <div class="modal-overlay" id="modal-batch">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Batch Download via Pattern Generator</div>
+        <button class="modal-close" data-close="modal-batch">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="batch-template-input">URL Pattern (use [01-10] or [*])</label>
+          <input type="text" id="batch-template-input" class="form-input" value="https://example.com/archive/chapter_[01-05].zip">
+          <span class="form-help">Generates a batch of sequential URLs</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" for="batch-start-num">From</label>
+            <input type="number" id="batch-start-num" class="form-input" value="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="batch-end-num">To</label>
+            <input type="number" id="batch-end-num" class="form-input" value="5">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Generated Preview (<span id="batch-count-label">5</span> files)</label>
+          <div style="background-color: var(--color-surface-raised); border: 1px solid var(--color-border); padding: 8px; border-radius: var(--radius-md); max-height: 120px; overflow-y: auto; font-family: var(--font-mono); font-size: 11px;" id="batch-preview-list">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-batch">Cancel</button>
+        <button class="btn btn-primary" id="btn-add-batch-queue">Queue All Files</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S10: Expired Download Address Refresh Modal -->
+  <div class="modal-overlay" id="modal-refresh-url">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Refresh Expired Download Address</div>
+        <button class="modal-close" data-close="modal-refresh-url">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 13px; color: var(--color-text-muted);">
+          When signed download links (from Google Drive, Mega, Rapidgator, etc.) expire with HTTP 403 or 410, you can update the link without losing the already downloaded segments!
+        </p>
+
+        <div class="form-group">
+          <label class="form-label" for="refresh-old-url">Original Expired Address</label>
+          <input type="text" id="refresh-old-url" class="form-input" readonly>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="refresh-new-url">New Fresh Address</label>
+          <input type="url" id="refresh-new-url" class="form-input" placeholder="Paste refreshed URL from browser..." required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-refresh-url">Cancel</button>
+        <button class="btn btn-primary" id="btn-submit-refreshed-url">Resume Download</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S11: Site Grabber & Crawler Wizard -->
+  <div class="modal-overlay" id="modal-site-grabber">
+    <div class="modal-card" style="max-width: 600px;">
+      <div class="modal-header">
+        <div class="modal-title">Site Spider & Asset Grabber</div>
+        <button class="modal-close" data-close="modal-site-grabber">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="spider-start-url">Starting Webpage Address</label>
+          <input type="url" id="spider-start-url" class="form-input" value="https://example.com/gallery">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" for="spider-depth">Crawl Depth</label>
+            <select id="spider-depth" class="form-select">
+              <option value="1">1 (This page only)</option>
+              <option value="2" selected>2 (Links on page)</option>
+              <option value="3">3 (Entire site)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Asset Filters</label>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
+              <label><input type="checkbox" checked> Pictures</label>
+              <label><input type="checkbox" checked> Video</label>
+              <label><input type="checkbox" checked> Audio</label>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 10px;">
+          <button class="btn btn-secondary btn-sm" id="btn-spider-crawl">Crawl & Scan Assets</button>
+        </div>
+
+        <div class="form-group" style="margin-top: 10px;">
+          <label class="form-label">Found Assets Tree (<span id="spider-found-count">0</span>)</label>
+          <div style="background-color: var(--color-surface-raised); border: 1px solid var(--color-border); padding: 8px; border-radius: var(--radius-md); max-height: 120px; overflow-y: auto; font-size: 12px;" id="spider-results-tree">
+            <div style="color: var(--color-text-muted);">Click "Crawl & Scan Assets" to scan the webpage.</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-site-grabber">Cancel</button>
+        <button class="btn btn-primary" id="btn-spider-download-all">Download Selected Assets</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S12: Speed Limiter Config Dialog -->
+  <div class="modal-overlay" id="modal-speed-limiter">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <div class="modal-title">Speed Limiter Settings</div>
+        <button class="modal-close" data-close="modal-speed-limiter">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
+            <input type="checkbox" id="speed-limiter-active-check">
+            <span>Enable Speed Limiting</span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="speed-limit-slider">Maximum Download Speed: <span id="speed-limit-slider-label" style="color: var(--color-accent); font-family: var(--font-mono);">500 KB/s</span></label>
+          <input type="range" id="speed-limit-slider" min="50" max="10000" step="50" value="500" style="width: 100%;">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-speed-limiter">Cancel</button>
+        <button class="btn btn-primary" id="btn-save-speed-limiter">Apply Limits</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

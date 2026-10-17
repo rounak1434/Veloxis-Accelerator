@@ -1,33 +1,33 @@
 feature,area,priority,original,clone,notes
-Multi-connection dynamic file segmentation (up to 32 threads),download engine,must,yes,no,Core acceleration engine dividing target byte stream into range requests
-Resumable downloads with HTTP Range header verification,download engine,must,yes,no,Recovers and resumes interrupted downloads without re-downloading existing bytes
-Pre-download file size and filename probe via HTTP HEAD,download engine,must,yes,no,Queries headers before spawning segments to allocate file space
-Local segment storage and seamless file reassembly,download engine,must,yes,no,Writes chunk files or sparse files and stitches them upon last chunk completion
-Browser extension native messaging integration,browser integration,must,yes,no,Communicates between Chrome/Firefox/Edge extension and desktop client via stdin/stdout
-Automatic download interception for configured file types,browser integration,must,yes,no,Takes over browser download API when file extension matches rule
-Floating web video/audio download grabber panel,media grabber,must,yes,no,Injected button on streaming video elements allowing one-click download
-Resolution and stream format selector for web video,media grabber,must,yes,no,Parses available MP4/WebM/HLS streams and presents quality options
-Main dashboard with virtualized download task list,ui,must,yes,no,Table showing filename size progress speed time remaining status
-Category sidebar (All Unfinished Finished and media categories),ui,must,yes,no,Automatic sorting into Documents Compressed Music Video Programs
-Individual download progress modal with transfer rate and ETA,ui,must,yes,no,Live status modal with per-segment connection bar visualization
-Download completion dialog with Open and Open Folder actions,ui,must,yes,no,Action prompt with file execution and folder navigation
-Manual Add URL dialog with custom referrer and credentials,download engine,must,yes,no,Dialog to paste URLs set custom headers and specify storage path
-Download queues with start and stop controls,scheduler,must,yes,no,Orderable task queues to download items sequentially or in batches
-Scheduled start and stop times for queues,scheduler,must,yes,no,Off-peak automated downloading schedule
-Speed limiter with configurable bandwidth throttling,download engine,should,yes,no,Restricts download throughput globally or per task to preserve bandwidth
-Expired download link address refresh without data loss,resilience,should,yes,no,Re-opens browser page captures updated signed URL and resumes chunks
-Batch link download with wildcard patterns (e.g. [01-99]),download engine,should,yes,no,Adds numbered or lettered series of URLs in one operation
-Clipboard monitoring for downloadable URLs,system,should,yes,no,Auto-detects copied download links and suggests adding to manager
-System tray icon with quick controls and active speed readout,system,should,yes,no,Background daemon running in system tray with mini-panel
-Customizable connection limits and timeout settings,network,should,yes,no,Per-server maximum connection limit and retry timeout intervals
-HTTP HTTPS and SOCKS5 proxy server support,network,should,yes,no,Proxy configuration with authentication for corporate or secure environments
-Site login manager for basic digest and cookie authentication,network,should,yes,no,Stores credentials and passes Authorization headers for gated servers
-Automatic antivirus scanner execution on completed files,security,should,yes,no,Triggers local antivirus binary with parameter passing on completion
-Dark theme and modern customizable UI styling,ui,should,yes,no,Contemporary UI replacing legacy 90s Windows GDI look
-Post-completion power actions (Sleep Shutdown Hibernate),scheduler,should,yes,no,Executes OS shutdown or sleep when queue finishes
-File checksum verification (MD5 SHA256),security,could,yes,no,Validates file integrity against expected hash
-Site Spider and Grabber wizard for offline site mirroring,download engine,could,yes,no,Recursive crawler to download filtered assets from a website
-Audio-only stream extraction from video URLs,media grabber,could,yes,no,Extracts audio track or downloads audio-only streams from media players
-ZIP file preview before full download,download engine,could,yes,no,Reads central directory of remote ZIP via range request to inspect contents
+Multi-connection dynamic file segmentation (up to 32 threads),download engine,must,yes,yes,Core acceleration engine dividing target byte stream into range requests
+Resumable downloads with HTTP Range header verification,download engine,must,yes,yes,Recovers and resumes interrupted downloads without re-downloading existing bytes
+Pre-download file size and filename probe via HTTP HEAD,download engine,must,yes,yes,Queries headers before spawning segments to allocate file space
+Local segment storage and seamless file reassembly,download engine,must,yes,yes,Writes chunk files or sparse files and stitches them upon last chunk completion
+Browser extension native messaging integration,browser integration,must,yes,yes,Manifest V3 extension communicates with desktop client on localhost:6789
+Automatic download interception for configured file types,browser integration,must,yes,yes,Takes over browser download API when file extension matches rule
+Floating web video/audio download grabber panel,media grabber,must,yes,yes,Injected button on streaming video elements allowing one-click download
+Resolution and stream format selector for web video,media grabber,must,yes,yes,Parses available MP4/WebM/HLS streams and presents quality options
+Main dashboard with virtualized download task list,ui,must,yes,yes,Table showing filename size progress speed time remaining status
+Category sidebar (All Unfinished Finished and media categories),ui,must,yes,yes,Automatic sorting into Documents Compressed Music Video Programs
+Individual download progress modal with transfer rate and ETA,ui,must,yes,yes,Live status modal with per-segment connection bar visualization
+Download completion dialog with Open and Open Folder actions,ui,must,yes,yes,Action prompt with file execution and folder navigation
+Manual Add URL dialog with custom referrer and credentials,download engine,must,yes,yes,Dialog to paste URLs set custom headers and specify storage path
+Download queues with start and stop controls,scheduler,must,yes,yes,Orderable task queues to download items sequentially or in batches
+Scheduled start and stop times for queues,scheduler,must,yes,yes,Off-peak automated downloading schedule
+Speed limiter with configurable bandwidth throttling,download engine,should,yes,yes,Restricts download throughput globally or per task to preserve bandwidth
+Expired download link address refresh without data loss,resilience,should,yes,yes,Re-opens browser page captures updated signed URL and resumes chunks
+Batch link download with wildcard patterns (e.g. [01-99]),download engine,should,yes,yes,Adds numbered or lettered series of URLs in one operation
+Clipboard monitoring for downloadable URLs,system,should,yes,yes,Auto-detects copied download links and suggests adding to manager
+System tray icon with quick controls and active speed readout,system,should,yes,partial,Web/daemon real-time status bar with speed meter
+Customizable connection limits and timeout settings,network,should,yes,yes,Per-server maximum connection limit and retry timeout intervals
+HTTP HTTPS and SOCKS5 proxy server support,network,should,yes,partial,HTTP and HTTPS range streaming supported in engine
+Site login manager for basic digest and cookie authentication,network,should,yes,yes,Stores credentials and passes Authorization headers for gated servers
+Automatic antivirus scanner execution on completed files,security,should,yes,yes,Triggers local antivirus binary with parameter passing on completion
+Dark theme and modern customizable UI styling,ui,should,yes,yes,Contemporary UI replacing legacy 90s Windows GDI look
+Post-completion power actions (Sleep Shutdown Hibernate),scheduler,should,yes,yes,Configurable action trigger when queue finishes
+File checksum verification (MD5 SHA256),security,could,yes,yes,Validates file integrity with SHA256 during segment reassembly
+Site Spider and Grabber wizard for offline site mirroring,download engine,could,yes,yes,Recursive crawler wizard to discover and queue filtered assets
+Audio-only stream extraction from video URLs,media grabber,could,yes,yes,Extracts audio track or downloads audio-only streams from media players
+ZIP file preview before full download,download engine,could,yes,partial,Preview probed metadata and structure before download
 Legacy dial-up and VPN auto-dialer,network,could,yes,skip,Legacy Windows RAS dial-up routines are obsolete for modern systems
 Proprietary serial key and online activation server,licensing,must,yes,skip,Replica uses open/custom licensing clean-room implementation

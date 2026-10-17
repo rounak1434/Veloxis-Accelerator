@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Nexus Download Accelerator Integration",
+  "version": "1.0.0",
+  "description": "Smart browser integration and media stream grabber for Nexus Download Accelerator.",
+  "permissions": [
+    "downloads",
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://localhost:6789/*",
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["media-grabber.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Nexus Accelerator Status"
+  }
+}

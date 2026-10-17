@@ -1,0 +1,228 @@
+{
+  "tasks": [
+    {
+      "id": "test_exec_task",
+      "url": "http://localhost:9876/benchmark.dat",
+      "originalUrl": "http://localhost:9876/benchmark.dat",
+      "fileName": "downloaded_benchmark.dat",
+      "fileSize": 524288,
+      "downloadedBytes": 524288,
+      "saveDir": "C:\\Rounak\\IDM\\tests\\output",
+      "categoryId": "cat-comp",
+      "queueId": "queue-main",
+      "resumable": true,
+      "status": "completed",
+      "segments": [
+        {
+          "index": 0,
+          "startByte": 0,
+          "endByte": 65535,
+          "currentByte": 65536,
+          "status": "completed",
+          "tempFile": "test_exec_task.part0"
+        },
+        {
+          "index": 1,
+          "startByte": 65536,
+          "endByte": 131071,
+          "currentByte": 131072,
+          "status": "completed",
+          "tempFile": "test_exec_task.part1"
+        },
+        {
+          "index": 2,
+          "startByte": 131072,
+          "endByte": 196607,
+          "currentByte": 196608,
+          "status": "completed",
+          "tempFile": "test_exec_task.part2"
+        },
+        {
+          "index": 3,
+          "startByte": 196608,
+          "endByte": 262143,
+          "currentByte": 262144,
+          "status": "completed",
+          "tempFile": "test_exec_task.part3"
+        },
+        {
+          "index": 4,
+          "startByte": 262144,
+          "endByte": 327679,
+          "currentByte": 327680,
+          "status": "completed",
+          "tempFile": "test_exec_task.part4"
+        },
+        {
+          "index": 5,
+          "startByte": 327680,
+          "endByte": 393215,
+          "currentByte": 393216,
+          "status": "completed",
+          "tempFile": "test_exec_task.part5"
+        },
+        {
+          "index": 6,
+          "startByte": 393216,
+          "endByte": 458751,
+          "currentByte": 458752,
+          "status": "completed",
+          "tempFile": "test_exec_task.part6"
+        },
+        {
+          "index": 7,
+          "startByte": 458752,
+          "endByte": 524287,
+          "currentByte": 524288,
+          "status": "completed",
+          "tempFile": "test_exec_task.part7"
+        }
+      ],
+      "errorMessage": null,
+      "savePath": "C:\\Rounak\\IDM\\tests\\output\\downloaded_benchmark.dat",
+      "checksum": "e63846f82119f41c000d99b7d04a63fc7b8c632a3bf36ceb3145d46017ef20b9",
+      "completedAt": "2026-10-17T21:45:37.387Z"
+    }
+  ],
+  "categories": [
+    {
+      "id": "cat-comp",
+      "name": "Compressed",
+      "extensions": [
+        "zip",
+        "rar",
+        "7z",
+        "tar",
+        "gz",
+        "bz2",
+        "xz",
+        "iso"
+      ],
+      "folder": "Compressed"
+    },
+    {
+      "id": "cat-doc",
+      "name": "Documents",
+      "extensions": [
+        "pdf",
+        "doc",
+        "docx",
+        "xls",
+        "xlsx",
+        "ppt",
+        "pptx",
+        "txt",
+        "epub"
+      ],
+      "folder": "Documents"
+    },
+    {
+      "id": "cat-mus",
+      "name": "Music",
+      "extensions": [
+        "mp3",
+        "wav",
+        "flac",
+        "aac",
+        "ogg",
+        "m4a",
+        "wma"
+      ],
+      "folder": "Music"
+    },
+    {
+      "id": "cat-prog",
+      "name": "Programs",
+      "extensions": [
+        "exe",
+        "msi",
+        "dmg",
+        "pkg",
+        "deb",
+        "rpm",
+        "apk"
+      ],
+      "folder": "Programs"
+    },
+    {
+      "id": "cat-vid",
+      "name": "Video",
+      "extensions": [
+        "mp4",
+        "mkv",
+        "avi",
+        "mov",
+        "webm",
+        "flv",
+        "wmv",
+        "m4v"
+      ],
+      "folder": "Video"
+    }
+  ],
+  "queues": [
+    {
+      "id": "queue-main",
+      "name": "Main Download Queue",
+      "isScheduled": false,
+      "startTime": "02:00",
+      "stopTime": "06:00",
+      "daysOfWeek": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "maxConcurrent": 2,
+      "onComplete": "none"
+    },
+    {
+      "id": "queue-night",
+      "name": "Night Schedule Queue",
+      "isScheduled": true,
+      "startTime": "01:00",
+      "stopTime": "07:00",
+      "daysOfWeek": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "maxConcurrent": 3,
+      "onComplete": "none"
+    }
+  ],
+  "settings": {
+    "maxSegmentsPerDownload": 8,
+    "speedLimitEnabled": false,
+    "speedLimitBytesPerSec": 512000,
+    "defaultDownloadDir": "C:\\Rounak\\IDM\\downloads",
+    "tempDir": "C:\\Rounak\\IDM\\downloads\\.temp",
+    "clipboardMonitor": true,
+    "browserIntegration": true,
+    "interceptExtensions": [
+      "zip",
+      "rar",
+      "7z",
+      "iso",
+      "exe",
+      "msi",
+      "mp4",
+      "mkv",
+      "mp3",
+      "flac",
+      "pdf",
+      "tar",
+      "gz"
+    ],
+    "antivirusPath": "",
+    "antivirusArgs": ""
+  },
+  "credentials": []
+}
