@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Nexus Download Accelerator Integration",
+  "name": "Veloxis Accelerator Integration",
   "version": "1.0.0",
-  "description": "Smart browser integration and media stream grabber for Nexus Download Accelerator.",
+  "description": "Smart browser integration and media stream grabber for Veloxis Accelerator.",
   "permissions": [
     "downloads",
     "activeTab",

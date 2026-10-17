@@ -331,5 +331,5 @@ setInterval(() => {
 }, 150);
 
 server.listen(PORT, () => {
-  console.log(`Nexus Download Accelerator server listening on http://localhost:${PORT}`);
+  console.log(`Veloxis Accelerator server listening on http://localhost:${PORT}`);
 });

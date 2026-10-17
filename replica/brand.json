@@ -1,0 +1,18 @@
+{
+  "name": "Veloxis",
+  "avoid": [
+    "Internet Download Manager",
+    "IDM",
+    "Tonec",
+    "Tonec Inc"
+  ],
+  "domains": [
+    "internetdownloadmanager.com",
+    "tonec.com"
+  ],
+  "colors": [
+    "#0055aa",
+    "#2b78e4",
+    "#00aa55"
+  ]
+}
