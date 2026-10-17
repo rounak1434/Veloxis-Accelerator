@@ -9,6 +9,7 @@ const srcFiles = [
   'src/engine/downloader.js',
   'src/engine/storage.js',
   'src/engine/queueManager.js',
+  'src/engine/youtubeResolver.js',
   'src/server/index.js'
 ];
 

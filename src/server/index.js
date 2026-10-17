@@ -6,6 +6,7 @@ const { WebSocketServer } = require('ws');
 const storage = require('../engine/storage');
 const downloader = require('../engine/downloader');
 const queueManager = require('../engine/queueManager');
+const youtubeResolver = require('../engine/youtubeResolver');
 
 const PORT = process.env.PORT || 6789;
 const PUBLIC_DIR = path.join(__dirname, '..', '..', 'public');
@@ -87,14 +88,43 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
+    if (pathname === '/api/video-info' && req.method === 'POST') {
+      const body = await parseJsonBody(req);
+      if (!body.url) return sendJson(res, 400, { error: 'URL required' });
+
+      try {
+        if (youtubeResolver.isYouTubeUrl(body.url)) {
+          const info = await youtubeResolver.getVideoInfo(body.url);
+          return sendJson(res, 200, { success: true, ...info });
+        } else {
+          const probe = await downloader.probe(body.url);
+          return sendJson(res, 200, {
+            success: true,
+            title: probe.filename,
+            qualities: [
+              { formatId: 'direct', label: 'Direct Stream (Original)', ext: probe.filename.split('.').pop() || 'mp4' }
+            ]
+          });
+        }
+      } catch (err) {
+        return sendJson(res, 500, { error: err.message || 'Failed to extract video info' });
+      }
+    }
+
     if (pathname === '/api/tasks' && req.method === 'POST') {
       const body = await parseJsonBody(req);
       if (!body.url) return sendJson(res, 400, { error: 'URL is required' });
 
       const taskId = 'task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
       const settings = storage.getSettings();
-      const filename = body.fileName || downloader.extractFilename(body.url);
-      const categoryId = body.categoryId || storage.determineCategory(filename);
+      const isYT = youtubeResolver.isYouTubeUrl(body.url) || body.isYouTube;
+      const defaultExt = body.ext || (isYT ? 'mp4' : '');
+      let filename = body.fileName || (isYT && body.title ? `${body.title.replace(/[^a-z0-9]/gi, '_')}.${defaultExt}` : downloader.extractFilename(body.url));
+      if (!path.extname(filename) && defaultExt) {
+        filename += '.' + defaultExt;
+      }
+
+      const categoryId = body.categoryId || (isYT ? (body.type === 'audio' ? 'cat-music' : 'cat-video') : storage.determineCategory(filename));
       const queueId = body.queueId || 'queue-main';
 
       const task = {
@@ -111,9 +141,12 @@ const server = http.createServer(async (req, res) => {
         status: body.immediate !== false ? 'queued' : 'paused',
         resumable: body.resumable !== false,
         etag: body.etag || null,
-        contentType: body.contentType || 'application/octet-stream',
+        contentType: body.contentType || (isYT ? 'video/mp4' : 'application/octet-stream'),
         createdAt: new Date().toISOString(),
-        segments: []
+        segments: [],
+        isYouTube: !!isYT,
+        formatId: body.formatId || (isYT ? 'bestvideo[height<=720]+bestaudio/best[height<=720]/best' : null),
+        qualityLabel: body.qualityLabel || null
       };
 
       storage.upsertTask(task);

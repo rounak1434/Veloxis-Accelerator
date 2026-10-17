@@ -5,6 +5,7 @@ const https = require('https');
 const crypto = require('crypto');
 const { EventEmitter } = require('events');
 const storage = require('./storage');
+const youtubeResolver = require('./youtubeResolver');
 
 class DownloadEngine extends EventEmitter {
   constructor() {
@@ -14,6 +15,30 @@ class DownloadEngine extends EventEmitter {
 
   // Probe server to get file info before starting
   async probe(url, customHeaders = {}) {
+    if (youtubeResolver.isYouTubeUrl(url)) {
+      try {
+        const info = await youtubeResolver.getVideoInfo(url);
+        const filename = (info.title.replace(/[^a-z0-9]/gi, '_') || 'youtube_video') + '.mp4';
+        return {
+          url,
+          statusCode: 200,
+          filename,
+          fileSize: 0,
+          resumable: true,
+          etag: null,
+          contentType: 'video/mp4',
+          isYouTube: true,
+          title: info.title,
+          thumbnail: info.thumbnail,
+          duration: info.duration,
+          author: info.author,
+          qualities: info.qualities
+        };
+      } catch (err) {
+        console.warn('[Downloader] YouTube probe fallback:', err.message);
+      }
+    }
+
     return new Promise((resolve, reject) => {
       try {
         const parsed = new URL(url);
@@ -187,6 +212,74 @@ class DownloadEngine extends EventEmitter {
     const tempDir = settings.tempDir;
     if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
+    if (youtubeResolver.isYouTubeUrl(task.url) || task.isYouTube) {
+      task.status = 'downloading';
+      task.errorMessage = null;
+      storage.upsertTask(task);
+
+      const job = {
+        task,
+        requests: [],
+        speed: 0,
+        recentBytes: 0,
+        lastTickTime: Date.now(),
+        isPaused: false,
+        ytHandler: null
+      };
+
+      this.activeJobs.set(task.id, job);
+      this.emit('task-started', task);
+
+      const ytHandler = youtubeResolver.downloadYouTube(task.url, {
+        formatId: task.formatId || 'bestvideo[height<=720]+bestaudio/best[height<=720]/best',
+        outputDir: task.saveDir || settings.defaultDownloadDir,
+        filename: task.fileName
+      }, {
+        onProgress: (prog) => {
+          task.downloadedBytes = prog.downloadedBytes;
+          if (prog.fileSize > 0) task.fileSize = prog.fileSize;
+          job.speed = prog.speed;
+          task.segments = [{
+            index: 0,
+            startByte: 0,
+            endByte: task.fileSize,
+            currentByte: task.downloadedBytes,
+            status: 'downloading'
+          }];
+          storage.upsertTask(task);
+        },
+        onComplete: (info) => {
+          task.status = 'completed';
+          if (info.fileSize) task.fileSize = task.downloadedBytes = info.fileSize;
+          if (info.destination) task.savePath = info.destination;
+          task.completedAt = new Date().toISOString();
+          task.segments = [{
+            index: 0,
+            startByte: 0,
+            endByte: task.fileSize,
+            currentByte: task.fileSize,
+            status: 'completed'
+          }];
+          storage.upsertTask(task);
+          this.activeJobs.delete(task.id);
+          this.emit('task-completed', task);
+        },
+        onError: (err) => {
+          if (!job.isPaused) {
+            console.error(`Task ${task.id} (YouTube) error:`, err.message);
+            task.status = 'error';
+            task.errorMessage = err.message;
+            storage.upsertTask(task);
+            this.activeJobs.delete(task.id);
+            this.emit('task-error', { task, error: err.message });
+          }
+        }
+      });
+
+      job.ytHandler = ytHandler;
+      return;
+    }
+
     if (!task.segments || task.segments.length === 0) {
       task.segments = this.initializeSegments(task, settings.maxSegmentsPerDownload);
     }
@@ -330,6 +423,11 @@ class DownloadEngine extends EventEmitter {
     if (!job) return;
 
     job.isPaused = true;
+    if (job.ytHandler) {
+      try {
+        job.ytHandler.cancel();
+      } catch (_) {}
+    }
     for (const req of job.requests) {
       try {
         req.destroy();

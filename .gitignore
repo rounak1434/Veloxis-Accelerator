@@ -3,3 +3,4 @@ downloads/
 .temp/
 dist/
 .env
+bin/*.exe

@@ -202,6 +202,16 @@
             <option value="cat-other">Other</option>
           </select>
         </div>
+        <div class="form-group" id="add-quality-group" style="display: none;">
+          <label class="form-label" for="add-quality-select">Video Quality</label>
+          <select id="add-quality-select" class="form-select">
+            <option value="bestvideo[height<=1080]+bestaudio/best[height<=1080]/best">1080p (Full HD) • MP4</option>
+            <option value="bestvideo[height<=720]+bestaudio/best[height<=720]/best" selected>720p (HD) • MP4</option>
+            <option value="bestvideo[height<=480]+bestaudio/best[height<=480]/best">480p (Standard) • MP4</option>
+            <option value="bestvideo[height<=360]+bestaudio/best[height<=360]/best">360p (Medium) • MP4</option>
+            <option value="bestaudio[ext=m4a]/bestaudio/best">Audio Only • M4A</option>
+          </select>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-ghost" data-close="modal-add-url">Cancel</button>
@@ -238,6 +248,17 @@
         <div class="form-group">
           <label class="form-label" for="info-save-dir">Save Directory</label>
           <input type="text" id="info-save-dir" class="form-input">
+        </div>
+
+        <div class="form-group" id="info-quality-group" style="display: none;">
+          <label class="form-label" for="info-quality-select">Stream Quality</label>
+          <select id="info-quality-select" class="form-select">
+            <option value="bestvideo[height<=1080]+bestaudio/best">1080p (Full HD) • MP4</option>
+            <option value="bestvideo[height<=720]+bestaudio/best" selected>720p (HD) • MP4</option>
+            <option value="bestvideo[height<=480]+bestaudio/best">480p (Standard) • MP4</option>
+            <option value="bestvideo[height<=360]+bestaudio/best">360p (Medium) • MP4</option>
+            <option value="bestaudio[ext=m4a]/bestaudio/best">Audio Only • M4A</option>
+          </select>
         </div>
 
         <div class="form-group">

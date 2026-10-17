@@ -408,6 +408,18 @@
       openModal('modal-speed-limiter');
     });
 
+    // Listen for YouTube URL pasted into Add Address
+    document.getElementById('add-url-input')?.addEventListener('input', (e) => {
+      const val = e.target.value.trim();
+      const isYT = val.includes('youtube.com') || val.includes('youtu.be');
+      const qualityGrp = document.getElementById('add-quality-group');
+      if (qualityGrp) qualityGrp.style.display = isYT ? 'block' : 'none';
+      if (isYT) {
+        const catSelect = document.getElementById('add-category-select');
+        if (catSelect) catSelect.value = 'cat-vid';
+      }
+    });
+
     // S02 -> S03 Probe Flow
     document.getElementById('btn-probe-url')?.addEventListener('click', async () => {
       const urlInput = document.getElementById('add-url-input');
@@ -437,9 +449,21 @@
         closeModal('modal-add-url');
         document.getElementById('info-file-name').textContent = info.filename;
         document.getElementById('info-url').textContent = info.url;
-        document.getElementById('info-size').textContent = formatBytes(info.fileSize);
+        document.getElementById('info-size').textContent = info.fileSize > 0 ? formatBytes(info.fileSize) : (info.isYouTube ? 'Adaptive Stream' : 'Calculating...');
         document.getElementById('info-resumable').textContent = info.resumable ? 'Yes (Multipart Range Supported)' : 'Single Connection Stream';
         document.getElementById('info-resumable').className = `status-chip ${info.resumable ? 'status-completed' : 'status-paused'}`;
+
+        if (info.isYouTube && info.qualities && info.qualities.length > 0) {
+          const qGroup = document.getElementById('info-quality-group');
+          const qSelect = document.getElementById('info-quality-select');
+          if (qSelect && qGroup) {
+            qSelect.innerHTML = info.qualities.map(q => `<option value="${q.formatId}">${q.label} • ${(q.ext || 'mp4').toUpperCase()}</option>`).join('');
+            qGroup.style.display = 'block';
+          }
+        } else {
+          const qGroup = document.getElementById('info-quality-group');
+          if (qGroup) qGroup.style.display = 'none';
+        }
 
         openModal('modal-file-info');
       } catch (err) {
@@ -451,13 +475,18 @@
       const url = document.getElementById('add-url-input').value.trim();
       const referrer = document.getElementById('add-referrer-input').value.trim();
       const categoryId = document.getElementById('add-category-select').value;
+      const isYT = url.includes('youtube.com') || url.includes('youtu.be');
+      const formatId = (isYT && document.getElementById('add-quality-group')?.style.display !== 'none')
+        ? document.getElementById('add-quality-select')?.value
+        : null;
+
       if (!url) return;
 
       closeModal('modal-add-url');
       const res = await fetch(`${API_BASE}/api/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, referrer, categoryId, immediate: true })
+        body: JSON.stringify({ url, referrer, categoryId, formatId, isYouTube: isYT, immediate: true })
       });
       const data = await res.json();
       await fetchTasks();
@@ -469,12 +498,16 @@
       const url = document.getElementById('info-url').textContent;
       const fileName = document.getElementById('info-file-name').textContent;
       const queueId = document.getElementById('info-queue-select').value;
+      const isYT = url.includes('youtube.com') || url.includes('youtu.be');
+      const formatId = (isYT && document.getElementById('info-quality-group')?.style.display !== 'none')
+        ? document.getElementById('info-quality-select')?.value
+        : null;
 
       closeModal('modal-file-info');
       const res = await fetch(`${API_BASE}/api/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, fileName, queueId, immediate: true })
+        body: JSON.stringify({ url, fileName, queueId, formatId, isYouTube: isYT, immediate: true })
       });
       const data = await res.json();
       await fetchTasks();
