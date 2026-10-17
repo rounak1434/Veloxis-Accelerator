@@ -377,6 +377,17 @@ setInterval(() => {
   }
 }, 150);
 
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n[Veloxis] Port ${PORT} is already in use by another instance.`);
+    console.error(`If a previous instance is running, you can stop it or run: Stop-Process -Name node\n`);
+    process.exit(1);
+  } else {
+    console.error('[Veloxis] Server error:', err);
+    process.exit(1);
+  }
+});
+
 server.listen(PORT, () => {
   console.log(`Veloxis Accelerator server listening on http://localhost:${PORT}`);
 });
