@@ -15,10 +15,10 @@ class DownloadEngine extends EventEmitter {
 
   // Probe server to get file info before starting
   async probe(url, customHeaders = {}) {
-    if (youtubeResolver.isYouTubeUrl(url)) {
+    if (youtubeResolver.isYouTubeUrl(url) || youtubeResolver.isStreamUrl(url)) {
       try {
-        const info = await youtubeResolver.getVideoInfo(url);
-        const filename = (info.title.replace(/[^a-z0-9]/gi, '_') || 'youtube_video') + '.mp4';
+        const info = await youtubeResolver.getVideoInfo(url, { referrer: customHeaders.Referer || customHeaders.referrer });
+        const filename = (info.title.replace(/[^a-z0-9]/gi, '_') || 'video_stream') + '.mp4';
         return {
           url,
           statusCode: 200,
@@ -27,7 +27,8 @@ class DownloadEngine extends EventEmitter {
           resumable: true,
           etag: null,
           contentType: 'video/mp4',
-          isYouTube: true,
+          isYouTube: youtubeResolver.isYouTubeUrl(url),
+          isStream: true,
           title: info.title,
           thumbnail: info.thumbnail,
           duration: info.duration,
@@ -35,7 +36,7 @@ class DownloadEngine extends EventEmitter {
           qualities: info.qualities
         };
       } catch (err) {
-        console.warn('[Downloader] YouTube probe fallback:', err.message);
+        console.warn('[Downloader] Stream probe fallback:', err.message);
       }
     }
 
@@ -212,7 +213,7 @@ class DownloadEngine extends EventEmitter {
     const tempDir = settings.tempDir;
     if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
-    if (youtubeResolver.isYouTubeUrl(task.url) || task.isYouTube) {
+    if (youtubeResolver.isYouTubeUrl(task.url) || task.isYouTube || task.isStream || youtubeResolver.isStreamUrl(task.url)) {
       task.status = 'downloading';
       task.errorMessage = null;
       storage.upsertTask(task);
@@ -230,10 +231,11 @@ class DownloadEngine extends EventEmitter {
       this.activeJobs.set(task.id, job);
       this.emit('task-started', task);
 
-      const ytHandler = youtubeResolver.downloadYouTube(task.url, {
-        formatId: task.formatId || 'bestvideo[height<=720]+bestaudio/best[height<=720]/best',
+      const ytHandler = youtubeResolver.downloadMediaStream(task.url, {
+        formatId: task.formatId || 'bestvideo+bestaudio/best',
         outputDir: task.saveDir || settings.defaultDownloadDir,
-        filename: task.fileName
+        filename: task.fileName,
+        referrer: task.referrer || task.originalUrl
       }, {
         onProgress: (prog) => {
           task.downloadedBytes = prog.downloadedBytes;
@@ -266,7 +268,7 @@ class DownloadEngine extends EventEmitter {
         },
         onError: (err) => {
           if (!job.isPaused) {
-            console.error(`Task ${task.id} (YouTube) error:`, err.message);
+            console.error(`Task ${task.id} (MediaStream) error:`, err.message);
             task.status = 'error';
             task.errorMessage = err.message;
             storage.upsertTask(task);

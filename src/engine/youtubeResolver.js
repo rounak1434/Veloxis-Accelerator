@@ -11,6 +11,13 @@ function isYouTubeUrl(url) {
   return /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//i.test(url);
 }
 
+function isStreamUrl(url) {
+  if (!url) return false;
+  if (isYouTubeUrl(url)) return true;
+  const lower = url.toLowerCase();
+  return lower.includes('.m3u8') || lower.includes('.mpd') || lower.includes('/hls/') || lower.includes('/dash/');
+}
+
 function getYtDlpPath() {
   if (fs.existsSync(YTDLP_PATH)) {
     return YTDLP_PATH;
@@ -19,17 +26,22 @@ function getYtDlpPath() {
 }
 
 /**
- * Get video details and available qualities for a YouTube URL
+ * Get video details and available qualities for a YouTube or media stream URL
  */
-function getVideoInfo(url) {
+function getVideoInfo(url, options = {}) {
   return new Promise((resolve, reject) => {
     const ytdlp = getYtDlpPath();
     const args = [
       '--js-runtimes', `node:${NODE_PATH}`,
       '-J',
-      '--no-playlist',
-      url
+      '--no-playlist'
     ];
+
+    if (options.referrer) {
+      args.push('--referer', options.referrer);
+    }
+
+    args.push(url);
 
     const proc = spawn(ytdlp, args, { windowsHide: true });
     let stdout = '';
@@ -45,7 +57,7 @@ function getVideoInfo(url) {
 
       try {
         const data = JSON.parse(stdout);
-        const title = data.title || 'YouTube Video';
+        const title = data.title || 'Video Stream';
         const duration = data.duration || 0;
         const thumbnail = data.thumbnail || (data.thumbnails && data.thumbnails.length ? data.thumbnails[data.thumbnails.length - 1].url : '');
         
@@ -92,6 +104,16 @@ function getVideoInfo(url) {
           });
         }
 
+        // If no discrete heights found, fallback to Best Adaptive Stream
+        if (qualityMap.size === 0) {
+          qualityMap.set('Best Adaptive Stream', {
+            formatId: 'bestvideo+bestaudio/best',
+            label: 'Best Adaptive Stream (MP4)',
+            ext: 'mp4',
+            type: 'video'
+          });
+        }
+
         // Convert Map to array
         const qualities = Array.from(qualityMap.values());
 
@@ -104,7 +126,7 @@ function getVideoInfo(url) {
           qualities
         });
       } catch (err) {
-        reject(new Error(`Failed to parse YouTube metadata: ${err.message}`));
+        reject(new Error(`Failed to parse media metadata: ${err.message}`));
       }
     });
 
@@ -113,13 +135,14 @@ function getVideoInfo(url) {
 }
 
 /**
- * Download a YouTube video with real-time progress callbacks
+ * Universal media stream & YouTube download with real-time progress callbacks
  */
-function downloadYouTube(url, options = {}, callbacks = {}) {
+function downloadMediaStream(url, options = {}, callbacks = {}) {
   const {
-    formatId = 'bestvideo[height<=720]+bestaudio/best[height<=720]/best',
+    formatId = 'bestvideo+bestaudio/best',
     outputDir = path.join(__dirname, '..', '..', 'downloads'),
-    filename = null
+    filename = null,
+    referrer = null
   } = options;
 
   const { onProgress, onComplete, onError } = callbacks;
@@ -142,6 +165,12 @@ function downloadYouTube(url, options = {}, callbacks = {}) {
     '--no-playlist'
   ];
 
+  if (referrer) {
+    args.push('--referer', referrer);
+  }
+
+  args.push('--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+
   if (hasFfmpeg) {
     args.push('--ffmpeg-location', BIN_DIR);
     if (!formatId.startsWith('bestaudio')) {
@@ -151,7 +180,7 @@ function downloadYouTube(url, options = {}, callbacks = {}) {
 
   args.push(url);
 
-  console.log(`[YouTube Resolver] Spawning: ${ytdlp} ${args.join(' ')}`);
+  console.log(`[Media Stream Resolver] Spawning: ${ytdlp} ${args.join(' ')}`);
   const proc = spawn(ytdlp, args, { windowsHide: true });
 
   let finalDestination = '';
@@ -213,6 +242,29 @@ function downloadYouTube(url, options = {}, callbacks = {}) {
             destination: finalDestination
           });
         }
+        continue;
+      }
+
+      // Handle HLS fragment progress: [download] (frag 12/120)
+      const fragMatch = trimmed.match(/\[download\]\s+\(frag\s+(\d+)\/(\d+)\)/i);
+      if (fragMatch) {
+        const currFrag = parseInt(fragMatch[1], 10);
+        const totalFrag = parseInt(fragMatch[2], 10);
+        if (totalFrag > 0) {
+          const percent = parseFloat(((currFrag / totalFrag) * 100).toFixed(1));
+          const estTotal = lastTotal > 0 ? lastTotal : totalFrag * 500000;
+          const estDownloaded = Math.round(estTotal * (percent / 100));
+
+          if (onProgress) {
+            onProgress({
+              percent,
+              downloadedBytes: estDownloaded,
+              fileSize: estTotal,
+              speed: lastSpeed || 1500000,
+              destination: finalDestination
+            });
+          }
+        }
       }
     }
   });
@@ -264,6 +316,8 @@ function downloadYouTube(url, options = {}, callbacks = {}) {
 
 module.exports = {
   isYouTubeUrl,
+  isStreamUrl,
   getVideoInfo,
-  downloadYouTube
+  downloadYouTube: downloadMediaStream,
+  downloadMediaStream
 };

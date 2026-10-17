@@ -6,7 +6,8 @@
   "permissions": [
     "downloads",
     "activeTab",
-    "storage"
+    "storage",
+    "webRequest"
   ],
   "host_permissions": [
     "http://localhost:6789/*",
@@ -20,6 +21,8 @@
       "matches": ["<all_urls>"],
       "js": ["content.js"],
       "css": ["media-grabber.css"],
+      "all_frames": true,
+      "match_about_blank": true,
       "run_at": "document_idle"
     }
   ],

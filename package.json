@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node tests/engine.test.js && node tests/e2e.test.js",
+    "test": "node tests/engine.test.js && node tests/e2e.test.js && node tests/stream.test.js",
     "build": "node scripts/build.js",
     "parity": "node scripts/parity.js",
     "sweep": "node scripts/sweep.js",

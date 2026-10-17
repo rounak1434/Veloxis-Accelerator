@@ -93,15 +93,15 @@ const server = http.createServer(async (req, res) => {
       if (!body.url) return sendJson(res, 400, { error: 'URL required' });
 
       try {
-        if (youtubeResolver.isYouTubeUrl(body.url)) {
-          const info = await youtubeResolver.getVideoInfo(body.url);
+        if (youtubeResolver.isYouTubeUrl(body.url) || youtubeResolver.isStreamUrl(body.url)) {
+          const info = await youtubeResolver.getVideoInfo(body.url, { referrer: body.referrer });
           return sendJson(res, 200, { success: true, ...info });
         } else {
-          const probe = await downloader.probe(body.url);
+          const probe = await downloader.probe(body.url, { referrer: body.referrer });
           return sendJson(res, 200, {
             success: true,
             title: probe.filename,
-            qualities: [
+            qualities: probe.qualities || [
               { formatId: 'direct', label: 'Direct Stream (Original)', ext: probe.filename.split('.').pop() || 'mp4' }
             ]
           });
@@ -127,13 +127,17 @@ const server = http.createServer(async (req, res) => {
       const taskId = 'task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
       const settings = storage.getSettings();
       const isYT = youtubeResolver.isYouTubeUrl(body.url) || body.isYouTube;
-      const defaultExt = body.ext || (isYT ? 'mp4' : '');
-      let filename = body.fileName || (isYT && body.title ? `${body.title.replace(/[^a-z0-9]/gi, '_')}.${defaultExt}` : downloader.extractFilename(body.url));
+      const isStream = isYT || body.isStream || youtubeResolver.isStreamUrl(body.url);
+      const defaultExt = body.ext || (isStream ? 'mp4' : '');
+      let filename = body.fileName || ((isStream || isYT) && body.title ? `${body.title.replace(/[^a-z0-9]/gi, '_')}.${defaultExt}` : downloader.extractFilename(body.url));
       if (!path.extname(filename) && defaultExt) {
         filename += '.' + defaultExt;
       }
+      if (filename.toLowerCase().endsWith('.m3u8')) {
+        filename = filename.replace(/\.m3u8$/i, '.mp4');
+      }
 
-      const categoryId = body.categoryId || (isYT ? (body.type === 'audio' ? 'cat-music' : 'cat-video') : storage.determineCategory(filename));
+      const categoryId = body.categoryId || (isStream ? (body.type === 'audio' ? 'cat-music' : 'cat-video') : storage.determineCategory(filename));
       const queueId = body.queueId || 'queue-main';
 
       const task = {
@@ -150,11 +154,12 @@ const server = http.createServer(async (req, res) => {
         status: body.immediate !== false ? 'queued' : 'paused',
         resumable: body.resumable !== false,
         etag: body.etag || null,
-        contentType: body.contentType || (isYT ? 'video/mp4' : 'application/octet-stream'),
+        contentType: body.contentType || (isStream ? 'video/mp4' : 'application/octet-stream'),
         createdAt: new Date().toISOString(),
         segments: [],
         isYouTube: !!isYT,
-        formatId: body.formatId || (isYT ? 'bestvideo[height<=720]+bestaudio/best[height<=720]/best' : null),
+        isStream: !!isStream,
+        formatId: body.formatId || (isStream ? 'bestvideo+bestaudio/best' : null),
         qualityLabel: body.qualityLabel || null
       };
 
