@@ -31,3 +31,8 @@ Audio-only stream extraction from video URLs,media grabber,could,yes,yes,Extract
 ZIP file preview before full download,download engine,could,yes,partial,Preview probed metadata and structure before download
 Legacy dial-up and VPN auto-dialer,network,could,yes,skip,Legacy Windows RAS dial-up routines are obsolete for modern systems
 Proprietary serial key and online activation server,licensing,must,yes,skip,Replica uses open/custom licensing clean-room implementation
+Modern high-DPI dark mode interface,ui,must,no,yes,Solves the 1990s Windows GDI appearance complaints (FIX-1)
+Silent background downloads with native OS toast alerts,ui,should,no,yes,Eliminates focus-stealing popup chains (FIX-2)
+Cross-platform Linux and macOS support,platform,must,no,yes,Runs via portable Node/Electron on all major operating systems (FIX-3)
+Headless REST API and WebSocket daemon,automation,should,no,yes,Allows developers and scripts to trigger downloads remotely (FIX-4)
+Multi-device hardware-agnostic licensing,licensing,must,no,yes,No motherboard binding or false fake serial warnings (FIX-5)
