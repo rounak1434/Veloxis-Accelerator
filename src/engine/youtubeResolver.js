@@ -131,14 +131,25 @@ function downloadYouTube(url, options = {}, callbacks = {}) {
   const ytdlp = getYtDlpPath();
   const outputTemplate = filename ? path.join(outputDir, filename) : path.join(outputDir, '%(title)s.%(ext)s');
 
+  const ffmpegPath = path.join(BIN_DIR, 'ffmpeg.exe');
+  const hasFfmpeg = fs.existsSync(ffmpegPath);
+
   const args = [
     '--js-runtimes', `node:${NODE_PATH}`,
     '-f', formatId,
     '-o', outputTemplate,
     '--newline',
-    '--no-playlist',
-    url
+    '--no-playlist'
   ];
+
+  if (hasFfmpeg) {
+    args.push('--ffmpeg-location', BIN_DIR);
+    if (!formatId.startsWith('bestaudio')) {
+      args.push('--merge-output-format', 'mp4');
+    }
+  }
+
+  args.push(url);
 
   console.log(`[YouTube Resolver] Spawning: ${ytdlp} ${args.join(' ')}`);
   const proc = spawn(ytdlp, args, { windowsHide: true });
@@ -154,9 +165,16 @@ function downloadYouTube(url, options = {}, callbacks = {}) {
       const trimmed = line.trim();
       if (!trimmed) continue;
 
+      // Detect Merger destination file path
+      const mergerMatch = trimmed.match(/\[Merger\] Merging formats into "([^"]+)"/i);
+      if (mergerMatch) {
+        finalDestination = mergerMatch[1].trim();
+        continue;
+      }
+
       // Detect destination file path
       const destMatch = trimmed.match(/\[download\] Destination:\s+(.*)/i);
-      if (destMatch) {
+      if (destMatch && !finalDestination.endsWith('.mp4')) {
         finalDestination = destMatch[1].trim();
         continue;
       }
@@ -204,10 +222,23 @@ function downloadYouTube(url, options = {}, callbacks = {}) {
 
   proc.on('close', (code) => {
     if (code === 0) {
+      if (finalDestination) {
+        const mp4Candidate = finalDestination.replace(/\.[^.]+$/, '.mp4');
+        if (fs.existsSync(mp4Candidate)) {
+          finalDestination = mp4Candidate;
+        }
+      }
       if (onComplete) {
+        let size = lastTotal;
+        try {
+          if (finalDestination && fs.existsSync(finalDestination)) {
+            size = fs.statSync(finalDestination).size;
+          }
+        } catch (_) {}
+
         onComplete({
           destination: finalDestination,
-          fileSize: lastTotal || lastDownloaded
+          fileSize: size || lastDownloaded
         });
       }
     } else {

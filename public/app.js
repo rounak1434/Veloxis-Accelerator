@@ -199,10 +199,36 @@
         </td>
       `;
 
-      tr.addEventListener('click', (e) => {
-        if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') {
-          window.nexusApp.showProgressModal(task.id);
+      const chk = tr.querySelector('.task-check');
+      chk?.addEventListener('change', (e) => {
+        e.stopPropagation();
+        if (chk.checked) {
+          selectedTaskIds.add(task.id);
+          tr.classList.add('selected');
+        } else {
+          selectedTaskIds.delete(task.id);
+          tr.classList.remove('selected');
         }
+      });
+
+      tr.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+        if (e.target.tagName === 'INPUT') return;
+
+        // Toggle selection on row click
+        if (selectedTaskIds.has(task.id)) {
+          selectedTaskIds.delete(task.id);
+          tr.classList.remove('selected');
+          if (chk) chk.checked = false;
+        } else {
+          selectedTaskIds.add(task.id);
+          tr.classList.add('selected');
+          if (chk) chk.checked = true;
+        }
+      });
+
+      tr.addEventListener('dblclick', (e) => {
+        window.nexusApp.showProgressModal(task.id);
       });
 
       tbody.appendChild(tr);
@@ -402,6 +428,44 @@
 
     document.getElementById('floating-grabber-pill')?.addEventListener('click', () => {
       window.nexusApp.quickDownloadMedia('https://speed.hetzner.de/100MB.bin', 'Injected_Stream_1080p.mp4');
+    });
+
+    // Toolbar selection actions
+    document.getElementById('btn-toolbar-resume')?.addEventListener('click', async () => {
+      if (selectedTaskIds.size === 0) return alert('Please select one or more downloads to resume.');
+      for (const id of selectedTaskIds) {
+        await window.nexusApp.startTask(id);
+      }
+    });
+
+    document.getElementById('btn-toolbar-pause')?.addEventListener('click', async () => {
+      if (selectedTaskIds.size === 0) return alert('Please select one or more downloads to pause.');
+      for (const id of selectedTaskIds) {
+        await window.nexusApp.pauseTask(id);
+      }
+    });
+
+    document.getElementById('btn-toolbar-pause-all')?.addEventListener('click', async () => {
+      for (const task of tasks.filter(t => t.status === 'downloading')) {
+        await window.nexusApp.pauseTask(task.id);
+      }
+    });
+
+    // Table Header Select-All Checkbox
+    document.querySelector('thead input[type="checkbox"]')?.addEventListener('change', (e) => {
+      const checked = e.target.checked;
+      document.querySelectorAll('.task-check').forEach(chk => {
+        chk.checked = checked;
+        const id = chk.dataset.id;
+        const row = document.getElementById(`row-${id}`);
+        if (checked) {
+          selectedTaskIds.add(id);
+          row?.classList.add('selected');
+        } else {
+          selectedTaskIds.delete(id);
+          row?.classList.remove('selected');
+        }
+      });
     });
 
     document.getElementById('btn-speed-limiter-toggle')?.addEventListener('click', () => {
