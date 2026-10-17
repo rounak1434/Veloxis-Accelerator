@@ -2,11 +2,13 @@
 (function() {
   const isYouTube = window.location.hostname.includes('youtube.com') || window.location.hostname.includes('youtu.be');
 
+  let activeDropdown = null;
+
   function getCleanVideoTitle() {
     let title = document.title || 'video_stream';
     if (isYouTube) {
       title = title.replace(/\s*-\s*YouTube\s*$/i, '');
-      const ytTitleEl = document.querySelector('h1.ytd-watch-metadata yt-formatted-string, #title h1');
+      const ytTitleEl = document.querySelector('h1.ytd-watch-metadata yt-formatted-string, #title h1, .ytp-title-link');
       if (ytTitleEl && ytTitleEl.textContent.trim()) {
         title = ytTitleEl.textContent.trim();
       }
@@ -14,12 +16,52 @@
     return title.trim();
   }
 
+  function getOrCreateDropdown() {
+    if (activeDropdown) return activeDropdown;
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'veloxis-dropdown-panel';
+    document.body.appendChild(dropdown);
+    activeDropdown = dropdown;
+
+    document.addEventListener('click', (e) => {
+      if (!dropdown.contains(e.target) && !e.target.closest('.veloxis-media-pill')) {
+        closeDropdown();
+      }
+    });
+
+    window.addEventListener('resize', closeDropdown);
+    window.addEventListener('scroll', closeDropdown);
+
+    return dropdown;
+  }
+
+  function closeDropdown() {
+    if (activeDropdown) {
+      activeDropdown.classList.remove('show');
+    }
+    document.querySelectorAll('.veloxis-media-pill.open').forEach(p => p.classList.remove('open'));
+  }
+
+  function positionDropdown(dropdown, pill) {
+    const rect = pill.getBoundingClientRect();
+    dropdown.style.top = `${rect.bottom + 8}px`;
+    dropdown.style.left = `${Math.max(10, rect.right - 300)}px`;
+  }
+
   function createGrabberWidget(video) {
     if (video.dataset.veloxisGrabberAttached) return;
     video.dataset.veloxisGrabberAttached = 'true';
 
-    const wrapper = video.parentElement;
-    if (!wrapper) return;
+    // Prefer top-level player element on YouTube
+    const playerTarget = isYouTube
+      ? (document.getElementById('movie_player') || video.closest('.html5-video-player') || video.parentElement)
+      : video.parentElement;
+
+    if (!playerTarget) return;
+
+    // Avoid duplicate containers
+    if (playerTarget.querySelector('.veloxis-grabber-container')) return;
 
     const container = document.createElement('div');
     container.className = 'veloxis-grabber-container';
@@ -32,40 +74,30 @@
       <span class="veloxis-caret">▼</span>
     `;
 
-    const dropdown = document.createElement('div');
-    dropdown.className = 'veloxis-dropdown-panel';
-
     container.appendChild(pill);
-    container.appendChild(dropdown);
 
-    // Toggle dropdown
     pill.addEventListener('click', (e) => {
       e.stopPropagation();
       e.preventDefault();
 
-      const isOpen = dropdown.classList.contains('show');
-      if (isOpen) {
-        dropdown.classList.remove('show');
-        pill.classList.remove('open');
+      const dropdown = getOrCreateDropdown();
+      const isAlreadyOpen = pill.classList.contains('open');
+
+      if (isAlreadyOpen) {
+        closeDropdown();
       } else {
-        dropdown.classList.add('show');
+        closeDropdown();
         pill.classList.add('open');
+        positionDropdown(dropdown, pill);
         renderQualityOptions(dropdown, pill, video);
+        dropdown.classList.add('show');
       }
     });
 
-    // Close on click outside
-    document.addEventListener('click', (e) => {
-      if (!container.contains(e.target)) {
-        dropdown.classList.remove('show');
-        pill.classList.remove('open');
-      }
-    });
-
-    if (getComputedStyle(wrapper).position === 'static') {
-      wrapper.style.position = 'relative';
+    if (getComputedStyle(playerTarget).position === 'static') {
+      playerTarget.style.position = 'relative';
     }
-    wrapper.appendChild(container);
+    playerTarget.appendChild(container);
   }
 
   function renderQualityOptions(dropdown, pill, video) {
@@ -75,47 +107,58 @@
       dropdown.innerHTML = `
         <div class="veloxis-panel-header">
           <span class="veloxis-panel-title">Choose Quality</span>
+          <button class="veloxis-panel-close">&times;</button>
         </div>
         <div class="veloxis-quality-list">
-          <div class="veloxis-quality-item" data-format="bestvideo[height<=1080]+bestaudio/best[height<=1080]/best" data-label="1080p">
+          <div class="veloxis-quality-item" data-format="bestvideo[height<=1080]+bestaudio/best[height<=1080]/best" data-label="1080p" data-type="video" data-ext="mp4">
             <div class="veloxis-item-left">
               <span class="veloxis-badge badge-fhd">1080p</span>
               <span class="veloxis-item-name">Full HD • MP4</span>
             </div>
             <span class="veloxis-item-btn">Get</span>
           </div>
-          <div class="veloxis-quality-item" data-format="bestvideo[height<=720]+bestaudio/best[height<=720]/best" data-label="720p">
+          <div class="veloxis-quality-item" data-format="bestvideo[height<=720]+bestaudio/best[height<=720]/best" data-label="720p" data-type="video" data-ext="mp4">
             <div class="veloxis-item-left">
               <span class="veloxis-badge badge-hd">720p</span>
               <span class="veloxis-item-name">High Def • MP4</span>
             </div>
             <span class="veloxis-item-btn">Get</span>
           </div>
-          <div class="veloxis-quality-item" data-format="bestvideo[height<=480]+bestaudio/best[height<=480]/best" data-label="480p">
+          <div class="veloxis-quality-item" data-format="bestvideo[height<=480]+bestaudio/best[height<=480]/best" data-label="480p" data-type="video" data-ext="mp4">
             <div class="veloxis-item-left">
               <span class="veloxis-badge badge-sd">480p</span>
               <span class="veloxis-item-name">Standard • MP4</span>
             </div>
             <span class="veloxis-item-btn">Get</span>
           </div>
-          <div class="veloxis-quality-item" data-format="bestvideo[height<=360]+bestaudio/best[height<=360]/best" data-label="360p">
+          <div class="veloxis-quality-item" data-format="bestvideo[height<=360]+bestaudio/best[height<=360]/best" data-label="360p" data-type="video" data-ext="mp4">
             <div class="veloxis-item-left">
               <span class="veloxis-badge badge-sd">360p</span>
               <span class="veloxis-item-name">Medium • MP4</span>
             </div>
             <span class="veloxis-item-btn">Get</span>
           </div>
-          <div class="veloxis-quality-item" data-format="bestaudio[ext=m4a]/bestaudio/best" data-label="Audio M4A" data-type="audio">
+          <div class="veloxis-quality-item" data-format="bestaudio[ext=m4a]/bestaudio/best" data-label="Audio M4A" data-type="audio" data-ext="m4a">
             <div class="veloxis-item-left">
               <span class="veloxis-badge badge-audio">Audio</span>
               <span class="veloxis-item-name">Audio Only • M4A</span>
             </div>
             <span class="veloxis-item-btn">Get</span>
           </div>
+          <div class="veloxis-quality-item" data-format="bestaudio/best" data-label="Audio MP3" data-type="audio" data-ext="mp3">
+            <div class="veloxis-item-left">
+              <span class="veloxis-badge badge-audio">Audio</span>
+              <span class="veloxis-item-name">Audio Only • MP3</span>
+            </div>
+            <span class="veloxis-item-btn">Get</span>
+          </div>
         </div>
       `;
 
-      // Try dynamically querying backend for exact formats if online
+      dropdown.querySelector('.veloxis-panel-close')?.addEventListener('click', closeDropdown);
+      attachItemListeners(dropdown, pill, title);
+
+      // Async fetch dynamic metadata if server responds
       chrome.runtime.sendMessage({
         action: 'get_video_info',
         url: window.location.href
@@ -146,17 +189,16 @@
           attachItemListeners(dropdown, pill, title);
         }
       });
-
-      attachItemListeners(dropdown, pill, title);
     } else {
-      // Non-YouTube standard direct HTML5 video
+      // Non-YouTube video element
       const src = video.currentSrc || video.src;
       dropdown.innerHTML = `
         <div class="veloxis-panel-header">
           <span class="veloxis-panel-title">Media Stream</span>
+          <button class="veloxis-panel-close">&times;</button>
         </div>
         <div class="veloxis-quality-list">
-          <div class="veloxis-quality-item" data-format="direct" data-label="Direct MP4" data-src="${src || ''}">
+          <div class="veloxis-quality-item" data-format="direct" data-label="Direct Video" data-src="${src || ''}">
             <div class="veloxis-item-left">
               <span class="veloxis-badge badge-hd">Stream</span>
               <span class="veloxis-item-name">Original Video Stream</span>
@@ -165,6 +207,7 @@
           </div>
         </div>
       `;
+      dropdown.querySelector('.veloxis-panel-close')?.addEventListener('click', closeDropdown);
       attachItemListeners(dropdown, pill, title);
     }
   }
@@ -182,8 +225,7 @@
 
         const pillText = pill.querySelector('.veloxis-pill-text');
         pillText.textContent = `Queuing [${label}]...`;
-        dropdown.classList.remove('show');
-        pill.classList.remove('open');
+        closeDropdown();
 
         chrome.runtime.sendMessage({
           action: 'download_youtube',
@@ -198,7 +240,7 @@
             pillText.textContent = `✓ Queued [${label}]!`;
             setTimeout(() => {
               pillText.textContent = `Download Video`;
-            }, 3500);
+            }, 4000);
           } else {
             pillText.textContent = `Error queueing`;
             setTimeout(() => {

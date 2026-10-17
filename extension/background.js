@@ -51,11 +51,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'download_youtube') {
+    let url = request.url;
+    if (!url || url.startsWith('blob:')) {
+      url = sender.tab?.url || url;
+    }
+
     fetch(`${DAEMON_URL}/api/tasks`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        url: request.url,
+        url: url,
         title: request.title,
         formatId: request.formatId,
         qualityLabel: request.qualityLabel,
@@ -73,12 +78,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'download_stream') {
+    let url = request.url;
+    let isYT = false;
+    let formatId = null;
+
+    if (!url || url.startsWith('blob:')) {
+      if (sender.tab && sender.tab.url) {
+        url = sender.tab.url;
+        isYT = url.includes('youtube.com') || url.includes('youtu.be');
+        if (isYT) formatId = 'bestvideo[height<=720]+bestaudio/best[height<=720]/best';
+      }
+    } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      isYT = true;
+      formatId = 'bestvideo[height<=720]+bestaudio/best[height<=720]/best';
+    }
+
     fetch(`${DAEMON_URL}/api/tasks`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        url: request.url,
+        url: url,
         fileName: request.filename,
+        isYouTube: isYT,
+        formatId: formatId,
         immediate: true
       })
     })

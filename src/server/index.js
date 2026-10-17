@@ -115,6 +115,15 @@ const server = http.createServer(async (req, res) => {
       const body = await parseJsonBody(req);
       if (!body.url) return sendJson(res, 400, { error: 'URL is required' });
 
+      // If a blob URL was received, attempt recovery from referrer
+      if (body.url.startsWith('blob:')) {
+        if (body.referrer && (youtubeResolver.isYouTubeUrl(body.referrer) || body.referrer.includes('youtube.com') || body.referrer.includes('youtu.be'))) {
+          body.url = body.referrer;
+        } else if (body.originalUrl && (youtubeResolver.isYouTubeUrl(body.originalUrl) || body.originalUrl.includes('youtube.com'))) {
+          body.url = body.originalUrl;
+        }
+      }
+
       const taskId = 'task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
       const settings = storage.getSettings();
       const isYT = youtubeResolver.isYouTubeUrl(body.url) || body.isYouTube;
