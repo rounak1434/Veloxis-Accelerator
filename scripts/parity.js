@@ -98,7 +98,7 @@ function runParity() {
   console.log(`Could-Haves Earned: ${prios.could.earned} / ${prios.could.count}`);
 
   // Generate markdown report
-  let md = `# Parity Report: Veloxis vs. Internet Download Manager\n\n`;
+  let md = `# Parity Report: Veloxis vs. Original Legacy Target\n\n`;
   md += `**Overall Feature Parity Score**: **${score.toFixed(1)}%**\n`;
   md += `**Must-Haves Parity**: **100.0%** (${prios.must.count}/${prios.must.count} completed, 0 missing)\n`;
   md += `**Verdict**: **Better than the original** (All must-haves done, core feature score > 90%, 0 open S1/S2 bugs, plus 5 key fix enhancements from user feedback).\n\n`;
@@ -147,7 +147,7 @@ function runParity() {
   });
 
   md += `\n## Behavioural Comparison\n\n`;
-  md += `| Workflow | Original IDM | Veloxis Clone | Advantage |\n`;
+  md += `| Workflow | Original Target | Veloxis Clone | Advantage |\n`;
   md += `| :--- | :--- | :--- | :--- |\n`;
   md += `| **Download Initiation** | 3 successive popups (Category prompt -> Probe -> Progress) | 1 clean pre-download dialog with auto-category & probe | **Fewer clicks (2 vs 4)** |\n`;
   md += `| **Download Completion** | Modal dialog pops up stealing window focus | Silent write to disk + native desktop toast alert | **Zero interruption** |\n`;

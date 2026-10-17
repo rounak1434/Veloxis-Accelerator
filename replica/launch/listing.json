@@ -1,0 +1,21 @@
+{
+  "avoid": [
+    "Internet Download Manager",
+    "IDM",
+    "Tonec",
+    "Tonec Inc"
+  ],
+  "app_store": {
+    "name": "Veloxis Download Accelerator",
+    "subtitle": "Multi Stream File Downloader",
+    "promotional_text": "Accelerate large transfers with dynamic multi-stream segmentation, video grabber tools, and automatic broken link resumption.",
+    "description": "Veloxis is a high-throughput download accelerator built for speed, stability, and quiet reliability.\n\nBy dynamically splitting files into parallel HTTP range streams, Veloxis maximizes bandwidth utilization and finishes large downloads significantly faster.\n\nKey Capabilities:\n- Dynamic Multi-Connection Slicing: Splits files into up to 32 parallel segments with dynamic chunk rebalancing.\n- Video and Audio Stream Grabber: Detects online video and audio streams with multiple resolution choices.\n- Silent Background Operation: Files save quietly to your disk with zero focus-stealing popups.\n- Resilient Broken Link Recovery: Easily update expired cloud URLs without losing already downloaded chunks.\n- High-Precision Telemetry: Real-time speed throttling, connection visualizer, and queue management.\n\nBuilt for power users who demand maximum performance and zero interruptions.",
+    "keywords": "video,audio,grabber,chunks,turbo,speed,threads,queue,resume,transfer,scheduler,bandwidth",
+    "whats_new": "Initial release featuring dynamic multipart range segmentation, media sniffer, dark mode, and broken link resumption."
+  },
+  "google_play": {
+    "title": "Veloxis Download Accelerator",
+    "short_description": "Accelerate transfers with parallel streams and silent background downloads.",
+    "full_description": "Veloxis is a high-throughput download accelerator designed for speed, stability, and silent background efficiency.\n\nVeloxis splits large files into dynamic parallel streams, saturating your internet bandwidth to deliver maximum transfer speed without interrupting your active workflow.\n\nCore Features:\n\n• Dynamic Multi-Connection Engine\nSplits downloads into simultaneous HTTP range streams with automatic chunk rebalancing when servers throttle individual connections.\n\n• Video and Media Stream Sniffer\nInstantly captures streaming media across supported websites with one-click resolution and format selection.\n\n• Silent Background Transfers\nZero modal nag screens and zero focus-stealing dialogs. Files save directly to disk with native system alerts.\n\n• Resilient Link Recovery\nUpdate expired cloud URLs without restarting your download or losing progress.\n\n• Bandwidth Scheduling & Throttling\nSet custom transfer speeds or queue large files for automated night-time downloading."
+  }
+}

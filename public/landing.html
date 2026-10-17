@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veloxis — High-Throughput Download Accelerator</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      overflow-y: auto;
+      height: auto;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.6;
+    }
+
+    .landing-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(15, 17, 23, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--color-border);
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .landing-nav .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--color-text);
+      text-decoration: none;
+    }
+
+    .landing-nav .nav-links {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .landing-nav .nav-links a {
+      color: var(--color-text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.15s ease;
+    }
+
+    .landing-nav .nav-links a:hover {
+      color: var(--color-text);
+    }
+
+    .btn-primary {
+      background: var(--color-accent);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.15s ease;
+    }
+
+    .btn-primary:hover {
+      background: var(--color-accent-hover);
+    }
+
+    .btn-secondary {
+      background: var(--color-surface-raised);
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.15s ease;
+    }
+
+    .btn-secondary:hover {
+      background: var(--color-border);
+    }
+
+    .hero-section {
+      max-width: 1200px;
+      margin: 64px auto 96px;
+      padding: 0 32px;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: var(--radius-pill);
+      background: rgba(37, 99, 235, 0.12);
+      border: 1px solid rgba(37, 99, 235, 0.3);
+      color: #60a5fa;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+
+    .hero-title {
+      font-size: 52px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-sub {
+      font-size: 18px;
+      color: var(--color-text-muted);
+      max-width: 760px;
+      margin: 0 auto 36px;
+    }
+
+    .hero-cta {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .hero-note {
+      font-size: 12px;
+      color: var(--color-text-muted);
+      margin-bottom: 48px;
+    }
+
+    .hero-preview {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-pop);
+      overflow: hidden;
+      text-align: left;
+    }
+
+    .preview-header {
+      background: var(--color-surface-raised);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--color-border);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--color-text-muted);
+    }
+
+    .preview-body {
+      padding: 24px;
+    }
+
+    .preview-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--color-surface-raised);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      margin-bottom: 12px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+    }
+
+    .progress-bar-wrap {
+      width: 140px;
+      height: 8px;
+      background: var(--color-bg);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--color-accent);
+      border-radius: 4px;
+    }
+
+    .threads-visualizer {
+      margin-top: 16px;
+      padding: 16px;
+      background: var(--color-bg);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border);
+    }
+
+    .thread-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .thread-slot {
+      background: rgba(6, 182, 212, 0.15);
+      border: 1px solid var(--color-chunk-active);
+      color: var(--color-chunk-active);
+      padding: 6px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      text-align: center;
+    }
+
+    .section-wrap {
+      max-width: 1200px;
+      margin: 96px auto;
+      padding: 0 32px;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+
+    .section-title {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .section-desc {
+      color: var(--color-text-muted);
+      font-size: 16px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .problem-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .problem-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+    }
+
+    .problem-card h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #f87171;
+    }
+
+    .problem-card p {
+      color: var(--color-text-muted);
+      font-size: 14px;
+    }
+
+    .workflow-steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+    }
+
+    .step-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 32px 24px;
+      position: relative;
+    }
+
+    .step-num {
+      width: 36px;
+      height: 36px;
+      background: var(--color-accent);
+      color: #fff;
+      font-weight: 700;
+      border-radius: var(--radius-pill);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .step-card h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .step-card p {
+      color: var(--color-text-muted);
+      font-size: 14px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .feature-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+    }
+
+    .feature-icon {
+      font-size: 24px;
+      margin-bottom: 14px;
+    }
+
+    .feature-card h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      color: var(--color-text-muted);
+      font-size: 14px;
+    }
+
+    .pricing-table-wrap {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .pricing-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 36px 28px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .pricing-card.featured {
+      border-color: var(--color-accent);
+      background: var(--color-surface-raised);
+      box-shadow: 0 0 30px rgba(37, 99, 235, 0.2);
+    }
+
+    .featured-badge {
+      position: absolute;
+      top: -12px;
+      right: 24px;
+      background: var(--color-accent);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: var(--radius-pill);
+      text-transform: uppercase;
+    }
+
+    .pricing-card h3 {
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .pricing-card .price {
+      font-size: 38px;
+      font-weight: 800;
+      margin: 16px 0;
+      color: var(--color-text);
+    }
+
+    .pricing-card .price span {
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--color-text-muted);
+    }
+
+    .pricing-features {
+      list-style: none;
+      margin: 24px 0;
+      flex: 1;
+    }
+
+    .pricing-features li {
+      margin-bottom: 12px;
+      font-size: 14px;
+      color: var(--color-text-muted);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pricing-features li::before {
+      content: "✓";
+      color: var(--color-success);
+      font-weight: bold;
+    }
+
+    .faq-list {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .faq-item {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 24px;
+    }
+
+    .faq-item h4 {
+      font-size: 16px;
+      margin-bottom: 8px;
+      color: var(--color-text);
+    }
+
+    .faq-item p {
+      color: var(--color-text-muted);
+      font-size: 14px;
+    }
+
+    .footer-cta {
+      text-align: center;
+      background: var(--color-surface);
+      border-top: 1px solid var(--color-border);
+      padding: 80px 32px;
+      margin-top: 120px;
+    }
+
+    .footer-cta h2 {
+      font-size: 36px;
+      margin-bottom: 16px;
+    }
+
+    .footer-cta p {
+      color: var(--color-text-muted);
+      max-width: 600px;
+      margin: 0 auto 32px;
+    }
+
+    @media (max-width: 900px) {
+      .problem-cards, .workflow-steps, .features-grid, .pricing-table-wrap {
+        grid-template-columns: 1fr;
+      }
+      .hero-title {
+        font-size: 36px;
+      }
+      .landing-nav {
+        flex-direction: column;
+        gap: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="landing-nav">
+    <a href="#" class="brand">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="#60a5fa" fill="rgba(96, 165, 250, 0.2)"/>
+      </svg>
+      Veloxis Accelerator
+    </a>
+    <div class="nav-links">
+      <a href="#how-it-works">How It Works</a>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a href="/index.html" class="btn-secondary">Open App UI</a>
+      <a href="#pricing" class="btn-primary">Download Free</a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="hero-section">
+    <div class="hero-badge">
+      <span>●</span> Independent Multi-Stream Engine • Zero Adware
+    </div>
+    <h1 class="hero-title">High-Throughput Download Acceleration.<br>Without the 1990s Nagware.</h1>
+    <p class="hero-sub">
+      Veloxis splits your files into 8 dynamic parallel streams, auto-detects video streams, and runs silently in the background across Windows, macOS, and Linux. Zero modal popups. Zero motherboard-locked keys.
+    </p>
+    <div class="hero-cta">
+      <a href="#pricing" class="btn-primary" style="padding: 14px 28px; font-size: 16px;">
+        Download Free for Desktop
+      </a>
+      <a href="http://localhost:6789/api/tasks" target="_blank" class="btn-secondary" style="padding: 14px 28px; font-size: 16px;">
+        Explore REST Daemon
+      </a>
+    </div>
+    <div class="hero-note">Available for Windows 10/11, macOS Apple Silicon / Intel, and Linux • Manifest V3 companion included</div>
+
+    <!-- Live Product UI Preview -->
+    <div class="hero-preview">
+      <div class="preview-header">
+        <span>VELOXIS DAEMON • RUNNING (PORT 6789)</span>
+        <span>ACTIVE STREAMS: 8 / 8 • SPEED: 34.8 MB/s</span>
+      </div>
+      <div class="preview-body">
+        <div class="preview-row">
+          <div>
+            <div style="font-weight: 600; color: #fff;">ubuntu-24.04-live-server-amd64.iso</div>
+            <div style="color: var(--color-text-muted); font-size: 11px;">5.80 GB • 8 Streams Active • ETA: 42s</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-fill" style="width: 74%;"></div>
+            </div>
+            <span style="color: var(--color-success); font-weight: 600;">22.4 MB/s</span>
+          </div>
+        </div>
+
+        <div class="preview-row">
+          <div>
+            <div style="font-weight: 600; color: #fff;">blender-4.2.0-linux-x64.tar.xz</div>
+            <div style="color: var(--color-text-muted); font-size: 11px;">312 MB • SHA256 Verified</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-fill" style="width: 100%; background: var(--color-success);"></div>
+            </div>
+            <span style="color: var(--color-text-muted);">Completed</span>
+          </div>
+        </div>
+
+        <div class="threads-visualizer">
+          <div style="font-size: 11px; font-family: var(--font-mono); color: var(--color-text-muted); margin-bottom: 4px;">
+            DYNAMIC MULTI-RANGE SEGMENTATION (8 CONCURRENT CHUNKS)
+          </div>
+          <div class="thread-grid">
+            <div class="thread-slot">T1 142MB</div>
+            <div class="thread-slot">T2 138MB</div>
+            <div class="thread-slot">T3 145MB</div>
+            <div class="thread-slot">T4 140MB</div>
+            <div class="thread-slot">T5 141MB</div>
+            <div class="thread-slot">T6 139MB</div>
+            <div class="thread-slot">T7 143MB</div>
+            <div class="thread-slot">T8 136MB</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Problem Section -->
+  <section class="section-wrap">
+    <div class="section-header">
+      <h2 class="section-title">Download managers haven't evolved in twenty years</h2>
+      <p class="section-desc">Legacy utilities still saddle users with outdated software practices from 2002.</p>
+    </div>
+    <div class="problem-cards">
+      <div class="problem-card">
+        <h3>Intrusive Focus-Stealing Popups</h3>
+        <p>Successive dialog chains pop up every time a transfer starts or ends, interrupting fullscreen video games, code editors, and movie playback with fake-serial nag warnings.</p>
+      </div>
+      <div class="problem-card">
+        <h3>Hostile Motherboard Locks</h3>
+        <p>Licenses locked to a single physical motherboard. When you buy a laptop, replace a CPU, or dual-boot Linux, your license is invalidated and customer support refuses to assist.</p>
+      </div>
+      <div class="problem-card">
+        <h3>Trapped on 1990s Windows GDI</h3>
+        <p>Blurry controls on 4K high-DPI screens, no genuine dark mode, and zero native compatibility for macOS and Linux workstations.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section id="how-it-works" class="section-wrap">
+    <div class="section-header">
+      <h2 class="section-title">Three steps from link to assembled file</h2>
+      <p class="section-desc">Clean, deterministic acceleration that operates quietly in the background.</p>
+    </div>
+    <div class="workflow-steps">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <h3>Detect & Capture</h3>
+        <p>The lightweight Manifest V3 WebExtension intercepts file downloads and sniffs streaming video on any webpage with zero browser redirects.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <h3>Dynamic Range Slicing</h3>
+        <p>Veloxis splits the file into parallel HTTP range segments, continuously rebalancing chunk allocation to maximize bandwidth saturation.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <h3>Silent Verification</h3>
+        <p>Segments stitch together directly on disk with automatic SHA256 integrity checks and a non-intrusive native OS toast notification.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section (Fixes) -->
+  <section id="features" class="section-wrap">
+    <div class="section-header">
+      <h2 class="section-title">Engineered to eliminate legacy headaches</h2>
+      <p class="section-desc">Built fresh from first principles with modern open standards.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🌙</div>
+        <h3>Obsidian Midnight Dark UI</h3>
+        <p>High-DPI vector typography calibrated for WCAG AAA contrast (17.7:1), virtualized tables, and real-time thread animations.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🤫</div>
+        <h3>Silent Background Transfers</h3>
+        <p>No popups stealing window focus. Downloads write directly to disk with native system toasts or run headless in the background.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🌐</div>
+        <h3>True Cross-Platform</h3>
+        <p>Runs natively on Windows 10/11, macOS (Intel & Apple Silicon), and Linux with identical acceleration capabilities.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔄</div>
+        <h3>Expired Link Resuming</h3>
+        <p>When file hosting links expire after 2 hours, update the address in one click and resume without losing already downloaded bytes.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>REST API & WebSocket Daemon</h3>
+        <p>Trigger and automate downloads from bash scripts, webhooks, or homelab servers via local REST endpoints on port 6789.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🛡️</div>
+        <h3>Ad-Free Native Video Sniffer</h3>
+        <p>Clean Manifest V3 pill injected directly into HTML5 video elements without sketchy redirect networks or bundled toolbars.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section id="pricing" class="section-wrap">
+    <div class="section-header">
+      <h2 class="section-title">Transparent, honest pricing</h2>
+      <p class="section-desc">No motherboard fingerprinting. No deceitful update expiration cliffs.</p>
+    </div>
+    <div class="pricing-table-wrap">
+      <!-- Free -->
+      <div class="pricing-card">
+        <h3>Personal Free</h3>
+        <p style="color: var(--color-text-muted); font-size: 13px;">For casual everyday downloading</p>
+        <div class="price">$0 <span>/ forever</span></div>
+        <ul class="pricing-features">
+          <li>Up to 4 parallel segmented connections</li>
+          <li>Manifest V3 browser companion</li>
+          <li>HTML5 media stream grabber</li>
+          <li>Obsidian Midnight dark theme</li>
+          <li>Expired link URL resuming</li>
+          <li>Single workstation usage</li>
+        </ul>
+        <a href="/index.html" class="btn-secondary" style="text-align: center; justify-content: center;">Get Started Free</a>
+      </div>
+
+      <!-- Pro -->
+      <div class="pricing-card featured">
+        <div class="featured-badge">Most Popular</div>
+        <h3>Pro Multi-Device</h3>
+        <p style="color: var(--color-text-muted); font-size: 13px;">For power users and multi-PC setups</p>
+        <div class="price">$29 <span>/ one-time lifetime</span></div>
+        <p style="font-size: 12px; color: #60a5fa; margin-top: -8px; margin-bottom: 8px;">Or $25 billed annually</p>
+        <ul class="pricing-features">
+          <li><strong>Up to 32 parallel connections</strong></li>
+          <li><strong>3 Personal Devices (PC, Mac, Linux)</strong></li>
+          <li>Headless REST API daemon</li>
+          <li>Priority queue & speed scheduling</li>
+          <li>Dynamic thread workload rebalancing</li>
+          <li><strong>Perpetual lifetime updates</strong></li>
+        </ul>
+        <a href="#" class="btn-primary" style="text-align: center; justify-content: center;">Get Pro Lifetime</a>
+      </div>
+
+      <!-- Studio -->
+      <div class="pricing-card">
+        <h3>Studio & Homelab</h3>
+        <p style="color: var(--color-text-muted); font-size: 13px;">For devs, teams, and automation clusters</p>
+        <div class="price">$79 <span>/ one-time lifetime</span></div>
+        <ul class="pricing-features">
+          <li><strong>Up to 10 user seats or daemon servers</strong></li>
+          <li>Unlimited parallel streams</li>
+          <li>Headless server cluster scheduling</li>
+          <li>Post-download webhook automation</li>
+          <li>Centralized license management</li>
+          <li>Priority architectural support</li>
+        </ul>
+        <a href="#" class="btn-secondary" style="text-align: center; justify-content: center;">Get Studio License</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section id="faq" class="section-wrap">
+    <div class="section-header">
+      <h2 class="section-title">Frequently Asked Questions</h2>
+      <p class="section-desc">Straight answers to common questions.</p>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <h4>How is download speed actually accelerated?</h4>
+        <p>Most web servers throttle the bandwidth allowed to a single TCP stream. Veloxis opens up to 32 concurrent HTTP range requests simultaneously, allowing your system to saturate your total connection capacity up to 5x faster than a default browser download.</p>
+      </div>
+      <div class="faq-item">
+        <h4>Will this lock my license if I upgrade my motherboard or PC?</h4>
+        <p>No. Veloxis does not use invasive hardware fingerprinting or motherboard locks. A Pro license can be used across 3 personal machines (Windows, macOS, Linux) and can be easily transferred through your account dashboard.</p>
+      </div>
+      <div class="faq-item">
+        <h4>Can I trigger downloads from terminal scripts or home servers?</h4>
+        <p>Yes. Veloxis comes with a headless background daemon that exposes an open REST API on port 6789 and WebSocket telemetry, allowing you to trigger, pause, and monitor downloads via curl, python, or bash scripts.</p>
+      </div>
+      <div class="faq-item">
+        <h4>What happens if a cloud download link expires halfway through?</h4>
+        <p>Pause the download, select "Update Expired Link", paste the new temporary URL, and Veloxis will continue fetching the remaining segments without losing already downloaded progress.</p>
+      </div>
+      <div class="faq-item">
+        <h4>Does this contain bundled ads, toolbars, or crypto miners?</h4>
+        <p>No. Veloxis is clean, standalone software with an open Manifest V3 companion. We never bundle third-party offers, toolbars, or tracking software.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer CTA -->
+  <footer class="footer-cta">
+    <h2>Experience the modern standard for download speed</h2>
+    <p>Available for Windows 10/11, macOS Apple Silicon & Intel, and Linux.</p>
+    <a href="#pricing" class="btn-primary" style="padding: 16px 36px; font-size: 16px;">
+      Download Veloxis Free
+    </a>
+  </footer>
+
+</body>
+</html>

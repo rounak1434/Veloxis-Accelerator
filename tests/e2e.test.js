@@ -140,6 +140,28 @@ async function runE2ESuite() {
 
   await setupMockServer();
 
+  let daemonProc = null;
+  // Check if daemon is already running
+  try {
+    await requestJson(`http://localhost:${DAEMON_PORT}/api/tasks`);
+  } catch (_) {
+    console.log('[Test Setup] Starting Veloxis daemon on port ' + DAEMON_PORT + '...');
+    const { spawn } = require('child_process');
+    daemonProc = spawn(process.execPath, [path.join(__dirname, '..', 'src', 'server', 'index.js')], {
+      env: { ...process.env, PORT: DAEMON_PORT },
+      stdio: 'ignore'
+    });
+    // Wait for daemon to be ready
+    for (let i = 0; i < 30; i++) {
+      await new Promise(r => setTimeout(r, 100));
+      try {
+        await requestJson(`http://localhost:${DAEMON_PORT}/api/tasks`);
+        console.log('[Test Setup] Daemon is online and responding.');
+        break;
+      } catch (_) {}
+    }
+  }
+
   const results = [];
 
   // F01-H1: Multi-Segment Range Download & Checksum Verification
@@ -374,6 +396,9 @@ async function runE2ESuite() {
   }
 
   mockServer.close();
+  if (daemonProc) {
+    daemonProc.kill();
+  }
 
   console.log('\n======================================================');
   console.log(`TOTAL CASES: ${results.length} | PASSED: ${results.filter(r => r.status === 'PASS').length} | FAILED: ${results.filter(r => r.status === 'FAIL').length}`);
