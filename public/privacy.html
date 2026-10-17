@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Veloxis Accelerator</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      overflow-y: auto;
+      height: auto;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.7;
+    }
+    .legal-container {
+      max-width: 800px;
+      margin: 60px auto 100px;
+      padding: 0 24px;
+    }
+    .legal-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--color-border);
+      margin-bottom: 40px;
+    }
+    .legal-nav a {
+      color: var(--color-accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    h1 { font-size: 36px; margin-bottom: 12px; }
+    h2 { font-size: 22px; margin-top: 36px; margin-bottom: 12px; color: #fff; }
+    p, li { color: var(--color-text-muted); font-size: 15px; margin-bottom: 14px; }
+    ul { padding-left: 20px; margin-bottom: 20px; }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--color-success);
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    th, td {
+      border: 1px solid var(--color-border);
+      padding: 12px 14px;
+      text-align: left;
+      font-size: 14px;
+    }
+    th {
+      background: var(--color-surface-raised);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="legal-container">
+    <div class="legal-nav">
+      <a href="/landing.html">← Back to Veloxis</a>
+      <span style="font-size: 13px; color: var(--color-text-muted);">Effective Date: October 18, 2026</span>
+    </div>
+
+    <span class="badge">Privacy-First Architecture</span>
+    <h1>Privacy Policy</h1>
+    <p>Veloxis ("we", "our", or "us") provides high-throughput download acceleration software. We believe that what you download is none of our business. Our software operates locally on your machine and does not spy on, catalog, or transmit your URLs or download payloads.</p>
+
+    <h2>1. Data We Do NOT Collect</h2>
+    <ul>
+      <li><strong>No URL or Transfer Logging:</strong> Download addresses, file names, content types, and binary payloads are processed strictly on your local device. We never receive or store your download history.</li>
+      <li><strong>No Behavioral Ad Tracking:</strong> We do not track websites visited or search keywords.</li>
+      <li><strong>No Hardware Fingerprinting:</strong> We do not harvest motherboard serial numbers, MAC addresses, or CPU identifiers.</li>
+    </ul>
+
+    <h2>2. Third-Party Sub-Processors</h2>
+    <p>We use a minimal set of audited third-party service providers solely to handle payments and anonymous crash diagnostics:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Sub-Processor</th>
+          <th>Purpose</th>
+          <th>Data Processed</th>
+          <th>Location</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Stripe, Inc.</strong></td>
+          <td>Payment processing for Pro and Studio licenses</td>
+          <td>Name, billing address, credit card token (Stripe never shares raw card numbers with us).</td>
+          <td>United States (PCI-DSS Level 1)</td>
+        </tr>
+        <tr>
+          <td><strong>Sentry / GlitchTip (Self-Hosted)</strong></td>
+          <td>Opt-in crash reporting and application bug diagnostics</td>
+          <td>Stack trace, OS version (e.g. Windows 11), Node.js runtime version. Zero file paths or URLs.</td>
+          <td>European Union (GDPR compliant)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>3. Local Storage and Data Control</h2>
+    <p>Veloxis stores your task queue, segment allocation cache, and speed preferences locally in <code>./data/db.json</code>. You maintain 100% control over this data. You can inspect, modify, or erase this database at any time using the <strong>Clear All History</strong> action in Settings or by deleting the directory.</p>
+
+    <h2>4. Right to Deletion (GDPR & CCPA)</h2>
+    <p>If you have purchased a Pro or Studio license and wish to permanently delete your license token, billing records, or email address from our billing provider, email <code>privacy@veloxis.dev</code>. We process all verifiable erasure requests within 7 business days.</p>
+
+    <h2>5. Contact Us</h2>
+    <p>For inquiries regarding our privacy practices, contact us at <code>privacy@veloxis.dev</code>.</p>
+  </div>
+</body>
+</html>

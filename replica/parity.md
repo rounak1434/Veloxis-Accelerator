@@ -1,4 +1,4 @@
-# Parity Report: Veloxis vs. Internet Download Manager
+# Parity Report: Veloxis vs. Original Legacy Target
 
 **Overall Feature Parity Score**: **96.5%**
 **Must-Haves Parity**: **100.0%** (15/15 completed, 0 missing)
@@ -56,7 +56,7 @@ Features built into Veloxis that the original lacks (from `replica-entrepreneur`
 
 ## Behavioural Comparison
 
-| Workflow | Original IDM | Veloxis Clone | Advantage |
+| Workflow | Original Target | Veloxis Clone | Advantage |
 | :--- | :--- | :--- | :--- |
 | **Download Initiation** | 3 successive popups (Category prompt -> Probe -> Progress) | 1 clean pre-download dialog with auto-category & probe | **Fewer clicks (2 vs 4)** |
 | **Download Completion** | Modal dialog pops up stealing window focus | Silent write to disk + native desktop toast alert | **Zero interruption** |

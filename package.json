@@ -4,7 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node tests/engine.test.js && node tests/e2e.test.js",
+    "build": "node scripts/build.js",
+    "parity": "node scripts/parity.js",
+    "sweep": "node scripts/sweep.js",
+    "lint-listing": "node scripts/listing.js replica/launch/listing.json",
     "start": "node src/server/index.js"
   },
   "keywords": [],
