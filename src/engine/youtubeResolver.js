@@ -33,12 +33,19 @@ function getVideoInfo(url, options = {}) {
     const ytdlp = getYtDlpPath();
     const args = [
       '--js-runtimes', `node:${NODE_PATH}`,
+      '--extractor-args', 'generic:impersonate',
+      '--impersonate', 'chrome',
+      '--no-check-certificates',
       '-J',
       '--no-playlist'
     ];
 
     if (options.referrer) {
       args.push('--referer', options.referrer);
+      try {
+        const refUrl = new URL(options.referrer);
+        args.push('--add-header', `Origin:${refUrl.origin}`);
+      } catch (_) {}
     }
 
     args.push(url);
@@ -159,6 +166,10 @@ function downloadMediaStream(url, options = {}, callbacks = {}) {
 
   const args = [
     '--js-runtimes', `node:${NODE_PATH}`,
+    '--extractor-args', 'generic:impersonate',
+    '--impersonate', 'chrome',
+    '--no-check-certificates',
+    '-N', '8',
     '-f', formatId,
     '-o', outputTemplate,
     '--newline',
@@ -167,6 +178,10 @@ function downloadMediaStream(url, options = {}, callbacks = {}) {
 
   if (referrer) {
     args.push('--referer', referrer);
+    try {
+      const refUrl = new URL(referrer);
+      args.push('--add-header', `Origin:${refUrl.origin}`);
+    } catch (_) {}
   }
 
   args.push('--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
