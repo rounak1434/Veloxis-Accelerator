@@ -184,7 +184,9 @@ function downloadMediaStream(url, options = {}, callbacks = {}) {
     } catch (_) {}
   }
 
-  args.push('--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+  if (options.userAgent) {
+    args.push('--user-agent', options.userAgent);
+  }
 
   if (hasFfmpeg) {
     args.push('--ffmpeg-location', BIN_DIR);

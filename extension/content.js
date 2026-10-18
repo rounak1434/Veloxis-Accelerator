@@ -56,8 +56,8 @@
     try {
       if (!window.performance || !performance.getEntriesByType) return;
       const entries = performance.getEntriesByType('resource');
-      for (const r of entries) {
-        const u = r.name;
+      for (let i = entries.length - 1; i >= 0; i--) {
+        const u = entries[i].name;
         if (!u || u.startsWith('blob:') || u.startsWith('data:')) continue;
 
         const clean = u.split('?')[0].toLowerCase();
@@ -89,12 +89,15 @@
 
   function addDetectedStream(stream) {
     const base = stream.url.split('?')[0];
-    const exists = detectedLocalStreams.some(s => s.url.split('?')[0] === base);
-    if (!exists) {
+    const idx = detectedLocalStreams.findIndex(s => s.url.split('?')[0] === base);
+    if (idx >= 0) {
+      // Update with the newest active stream token
+      detectedLocalStreams[idx] = stream;
+    } else {
       detectedLocalStreams.push(stream);
-      // Ensure grabber widget is mounted when a stream is detected
-      ensureGrabberWidget();
     }
+    // Ensure grabber widget is mounted when a stream is detected
+    ensureGrabberWidget();
   }
 
   // Listen for messages from background sniffer
@@ -234,9 +237,18 @@
         createGrabberWidget(playerWrapper || document.body);
       }
     } else if (detectedLocalStreams.length > 0) {
-      // Stream detected on page even if video element is masked
+      // Stream detected on page even if video element is in an iframe
       if (!activePillContainer || !document.contains(activePillContainer)) {
-        createGrabberWidget(document.body);
+        const playerWrapper = document.querySelector('#watch-player, #player, .player, .watch-player, #iframe-embed, .player-wrapper, iframe[src*="embed"], iframe[src*="stream"], iframe');
+        if (playerWrapper && playerWrapper.parentElement) {
+          if (getComputedStyle(playerWrapper.parentElement).position === 'static') {
+            playerWrapper.parentElement.style.position = 'relative';
+          }
+          createGrabberWidget(playerWrapper.parentElement);
+        } else {
+          const container = createGrabberWidget(document.body);
+          if (container) container.classList.add('veloxis-floating-panel');
+        }
       }
     }
   }

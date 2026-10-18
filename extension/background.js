@@ -32,23 +32,25 @@ function registerDetectedStream(tabId, streamData) {
   const list = tabStreams.get(tabId);
   const cleanUrl = streamData.url.split('?')[0];
 
-  // Avoid spamming duplicates
-  const exists = list.some(item => item.url.split('?')[0] === cleanUrl);
-  if (!exists) {
+  const idx = list.findIndex(item => item.url.split('?')[0] === cleanUrl);
+  if (idx >= 0) {
+    list[idx] = {
+      ...streamData,
+      timestamp: Date.now()
+    };
+  } else {
     list.push({
       ...streamData,
       timestamp: Date.now()
     });
-
-    // Keep up to 15 streams per tab
     if (list.length > 15) list.shift();
-
-    // Broadcast stream detection to the tab
-    chrome.tabs.sendMessage(tabId, {
-      action: 'stream_detected',
-      stream: streamData
-    }).catch(() => {});
   }
+
+  // Broadcast stream detection to the tab
+  chrome.tabs.sendMessage(tabId, {
+    action: 'stream_detected',
+    stream: streamData
+  }).catch(() => {});
 }
 
 // Intercept browser downloads and route to desktop accelerator
