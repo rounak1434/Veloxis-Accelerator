@@ -23,7 +23,12 @@ if (Test-Path $exeSource) {
     exit 1
 }
 
-$folders = @('public', 'bin', 'extension', 'data')
+$engineSource = Join-Path $distDir "VeloxisEngine.exe"
+if (Test-Path $engineSource) {
+    Copy-Item $engineSource -Destination $targetDir -Force
+}
+
+$folders = @('public', 'bin', 'assets', 'extension', 'data')
 foreach ($f in $folders) {
     $src = Join-Path $distDir $f
     if (-not (Test-Path $src)) {

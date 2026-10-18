@@ -275,6 +275,24 @@ function deleteTaskFiles(task) {
       }
     }
 
+    if (pathname === '/api/tasks/pause-all' && req.method === 'POST') {
+      const active = storage.getTasks().filter(t => t.status === 'downloading');
+      for (const t of active) {
+        downloader.pauseTask(t.id);
+      }
+      return sendJson(res, 200, { success: true, count: active.length });
+    }
+
+    if (pathname === '/api/tasks/resume-all' && req.method === 'POST') {
+      const paused = storage.getTasks().filter(t => t.status === 'paused' || t.status === 'queued');
+      for (const t of paused) {
+        t.status = 'queued';
+        storage.upsertTask(t);
+        downloader.startTask(t).catch(err => console.error(err));
+      }
+      return sendJson(res, 200, { success: true, count: paused.length });
+    }
+
     if (pathname === '/api/tasks/bulk-delete' && req.method === 'POST') {
       const body = await parseJsonBody(req);
       const taskIds = body.taskIds || [];
