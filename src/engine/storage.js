@@ -1,7 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 
-const DB_FILE = path.join(__dirname, '..', '..', 'data', 'db.json');
+const DB_FILE = fs.existsSync(path.join(process.cwd(), 'data'))
+  ? path.join(process.cwd(), 'data', 'db.json')
+  : path.join(__dirname, '..', '..', 'data', 'db.json');
 
 const DEFAULT_CATEGORIES = [
   { id: 'cat-comp', name: 'Compressed', extensions: ['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz', 'iso'], folder: 'Compressed' },

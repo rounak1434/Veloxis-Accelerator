@@ -9,7 +9,9 @@
     "parity": "node scripts/parity.js",
     "sweep": "node scripts/sweep.js",
     "lint-listing": "node scripts/listing.js replica/launch/listing.json",
-    "start": "node src/server/index.js"
+    "start": "node src/server/index.js",
+    "desktop": "node src/desktop/launcher.js",
+    "package": "node scripts/package-exe.js"
   },
   "keywords": [],
   "author": "",
@@ -18,5 +20,8 @@
   "dependencies": {
     "@distube/ytdl-core": "^4.16.12",
     "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
   }
 }

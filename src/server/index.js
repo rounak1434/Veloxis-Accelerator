@@ -9,7 +9,9 @@ const queueManager = require('../engine/queueManager');
 const youtubeResolver = require('../engine/youtubeResolver');
 
 const PORT = process.env.PORT || 6789;
-const PUBLIC_DIR = path.join(__dirname, '..', '..', 'public');
+const PUBLIC_DIR = fs.existsSync(path.join(process.cwd(), 'public'))
+  ? path.join(process.cwd(), 'public')
+  : path.join(__dirname, '..', '..', 'public');
 
 // MIME types for static files
 const MIME_TYPES = {
