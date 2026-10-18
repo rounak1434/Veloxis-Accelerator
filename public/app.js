@@ -7,6 +7,8 @@
   let settings = {};
   let currentFilter = 'all';
   let selectedTaskIds = new Set();
+  let lastSelectedTaskId = null;
+  let activeContextMenuTaskId = null;
   let currentTrackingTaskId = null;
   let ws = null;
 
@@ -124,12 +126,113 @@
     }
   }
 
+  function updateSelectionUI() {
+    const btnDel = document.getElementById('btn-toolbar-delete');
+    if (btnDel) {
+      if (selectedTaskIds.size > 0) {
+        btnDel.textContent = `🗑 Delete (${selectedTaskIds.size})`;
+      } else {
+        btnDel.textContent = '🗑 Delete';
+      }
+    }
+  }
+
+  function showContextMenu(e, task) {
+    const menu = document.getElementById('task-context-menu');
+    if (!menu) return;
+
+    const isOpenable = task && task.status === 'completed';
+    const isDownloading = task && task.status === 'downloading';
+    const isPaused = task && (task.status === 'paused' || task.status === 'queued' || task.status === 'error');
+
+    const elOpen = document.getElementById('ctx-open');
+    const elOpenWith = document.getElementById('ctx-open-with');
+    const elOpenFolder = document.getElementById('ctx-open-folder');
+    const elResume = document.getElementById('ctx-resume');
+    const elStop = document.getElementById('ctx-stop');
+
+    if (elOpen) elOpen.classList.toggle('disabled', !isOpenable);
+    if (elOpenWith) elOpenWith.classList.toggle('disabled', !isOpenable);
+    if (elOpenFolder) elOpenFolder.classList.toggle('disabled', !task.savePath && !isOpenable);
+    if (elResume) elResume.classList.toggle('disabled', !isPaused);
+    if (elStop) elStop.classList.toggle('disabled', !isDownloading);
+
+    menu.style.display = 'flex';
+
+    const menuWidth = 210;
+    const menuHeight = menu.offsetHeight || 380;
+    let x = e.clientX;
+    let y = e.clientY;
+
+    if (x + menuWidth > window.innerWidth) {
+      x = window.innerWidth - menuWidth - 8;
+    }
+    if (y + menuHeight > window.innerHeight) {
+      y = Math.max(8, window.innerHeight - menuHeight - 8);
+    }
+
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+
+    const submenus = menu.querySelectorAll('.context-submenu');
+    submenus.forEach(sub => {
+      if (x + menuWidth + 180 > window.innerWidth) {
+        sub.classList.add('open-left');
+      } else {
+        sub.classList.remove('open-left');
+      }
+    });
+  }
+
+  function hideContextMenu() {
+    const menu = document.getElementById('task-context-menu');
+    if (menu) menu.style.display = 'none';
+  }
+
+  function openDeleteConfirmModal() {
+    if (selectedTaskIds.size === 0) {
+      alert('Please select one or more downloads to delete.');
+      return;
+    }
+
+    const previewEl = document.getElementById('delete-files-preview');
+    const msgEl = document.getElementById('delete-confirm-message');
+    const chkDisk = document.getElementById('delete-from-disk-checkbox');
+    if (chkDisk) chkDisk.checked = false;
+
+    const selectedTasks = tasks.filter(t => selectedTaskIds.has(t.id));
+    if (msgEl) {
+      msgEl.textContent = selectedTaskIds.size === 1
+        ? 'Are you sure you want to remove the selected download?'
+        : `Are you sure you want to remove the selected ${selectedTaskIds.size} downloads?`;
+    }
+
+    if (previewEl) {
+      previewEl.innerHTML = selectedTasks.map(t => `<div style="padding: 2px 0;">• ${t.fileName}</div>`).join('');
+    }
+
+    openModal('modal-delete-confirm');
+  }
+
+  function openRenameModal(taskId) {
+    const targetId = taskId || Array.from(selectedTaskIds)[0];
+    if (!targetId) {
+      alert('Please select a download to rename.');
+      return;
+    }
+    const task = tasks.find(t => t.id === targetId);
+    if (!task) return;
+
+    activeContextMenuTaskId = targetId;
+    document.getElementById('rename-input-filename').value = task.fileName;
+    document.getElementById('rename-input-folder').value = task.saveDir || settings.defaultDownloadDir || 'Downloads';
+    openModal('modal-rename');
+  }
+
   function renderTable() {
     const tbody = document.getElementById('tasks-tbody');
     const emptyState = document.getElementById('empty-state');
     if (!tbody) return;
-
-    tbody.innerHTML = '';
 
     const query = (document.getElementById('search-input')?.value || '').toLowerCase();
 
@@ -147,22 +250,44 @@
     });
 
     if (filtered.length === 0) {
-      emptyState.style.display = 'block';
+      tbody.innerHTML = '';
+      if (emptyState) emptyState.style.display = 'block';
       return;
     } else {
-      emptyState.style.display = 'none';
+      if (emptyState) emptyState.style.display = 'none';
     }
+
+    // Check if the current DOM rows match filtered task IDs exactly
+    const existingRowIds = Array.from(tbody.querySelectorAll('tr')).map(r => r.id.replace('row-', ''));
+    const isSameStructure = existingRowIds.length === filtered.length && existingRowIds.every((id, idx) => id === filtered[idx].id);
+
+    if (isSameStructure) {
+      // In-place update to preserve DOM elements and selection state
+      filtered.forEach(task => {
+        updateTableRow(task);
+        const tr = document.getElementById(`row-${task.id}`);
+        const chk = tr?.querySelector('.task-check');
+        const isSelected = selectedTaskIds.has(task.id);
+        if (tr) tr.classList.toggle('selected', isSelected);
+        if (chk) chk.checked = isSelected;
+      });
+      updateSelectionUI();
+      return;
+    }
+
+    tbody.innerHTML = '';
 
     filtered.forEach(task => {
       const tr = document.createElement('tr');
       tr.id = `row-${task.id}`;
-      if (selectedTaskIds.has(task.id)) tr.classList.add('selected');
+      const isSelected = selectedTaskIds.has(task.id);
+      if (isSelected) tr.classList.add('selected');
 
       const percent = task.fileSize > 0 ? Math.min(100, Math.round((task.downloadedBytes / task.fileSize) * 100)) : 0;
       const typeClass = getCategoryTypeClass(task.categoryId);
 
       tr.innerHTML = `
-        <td><input type="checkbox" class="task-check" data-id="${task.id}" ${selectedTaskIds.has(task.id) ? 'checked' : ''}></td>
+        <td><input type="checkbox" class="task-check" data-id="${task.id}" ${isSelected ? 'checked' : ''}></td>
         <td>
           <div class="filename-cell" title="${task.fileName}">
             <div class="file-type-icon ${typeClass}">${getFileExtensionBadge(task.fileName)}</div>
@@ -200,6 +325,9 @@
       `;
 
       const chk = tr.querySelector('.task-check');
+      chk?.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
       chk?.addEventListener('change', (e) => {
         e.stopPropagation();
         if (chk.checked) {
@@ -209,30 +337,86 @@
           selectedTaskIds.delete(task.id);
           tr.classList.remove('selected');
         }
+        lastSelectedTaskId = task.id;
+        updateSelectionUI();
       });
 
       tr.addEventListener('click', (e) => {
         if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
         if (e.target.tagName === 'INPUT') return;
 
-        // Toggle selection on row click
-        if (selectedTaskIds.has(task.id)) {
-          selectedTaskIds.delete(task.id);
-          tr.classList.remove('selected');
-          if (chk) chk.checked = false;
+        if (e.ctrlKey || e.metaKey) {
+          if (selectedTaskIds.has(task.id)) {
+            selectedTaskIds.delete(task.id);
+            tr.classList.remove('selected');
+            if (chk) chk.checked = false;
+          } else {
+            selectedTaskIds.add(task.id);
+            tr.classList.add('selected');
+            if (chk) chk.checked = true;
+          }
+        } else if (e.shiftKey && lastSelectedTaskId) {
+          const ids = filtered.map(t => t.id);
+          const idx1 = ids.indexOf(lastSelectedTaskId);
+          const idx2 = ids.indexOf(task.id);
+          if (idx1 !== -1 && idx2 !== -1) {
+            const start = Math.min(idx1, idx2);
+            const end = Math.max(idx1, idx2);
+            for (let i = start; i <= end; i++) {
+              const tid = ids[i];
+              selectedTaskIds.add(tid);
+              const r = document.getElementById(`row-${tid}`);
+              if (r) {
+                r.classList.add('selected');
+                const c = r.querySelector('.task-check');
+                if (c) c.checked = true;
+              }
+            }
+          }
         } else {
+          selectedTaskIds.clear();
+          document.querySelectorAll('#tasks-tbody tr.selected').forEach(r => r.classList.remove('selected'));
+          document.querySelectorAll('#tasks-tbody .task-check').forEach(c => c.checked = false);
+
           selectedTaskIds.add(task.id);
           tr.classList.add('selected');
           if (chk) chk.checked = true;
         }
+        lastSelectedTaskId = task.id;
+        updateSelectionUI();
       });
 
       tr.addEventListener('dblclick', (e) => {
-        window.nexusApp.showProgressModal(task.id);
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+        const dblAction = localStorage.getItem('dblClickAction') || 'open';
+        if (dblAction === 'open' && task.status === 'completed') {
+          window.nexusApp.openFile(task.id, false);
+        } else {
+          window.nexusApp.showProgressModal(task.id);
+        }
+      });
+
+      tr.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!selectedTaskIds.has(task.id)) {
+          selectedTaskIds.clear();
+          document.querySelectorAll('#tasks-tbody tr.selected').forEach(r => r.classList.remove('selected'));
+          document.querySelectorAll('#tasks-tbody .task-check').forEach(c => c.checked = false);
+          selectedTaskIds.add(task.id);
+          tr.classList.add('selected');
+          if (chk) chk.checked = true;
+          lastSelectedTaskId = task.id;
+          updateSelectionUI();
+        }
+        activeContextMenuTaskId = task.id;
+        showContextMenu(e, task);
       });
 
       tbody.appendChild(tr);
     });
+
+    updateSelectionUI();
   }
 
   function updateTableRow(task) {
@@ -354,8 +538,37 @@
       fetchTasks();
     },
 
+    async redownloadTask(id) {
+      await fetch(`${API_BASE}/api/tasks/${id}/redownload`, { method: 'POST' });
+      fetchTasks();
+    },
+
     async openFile(id, isFolder = false) {
       await fetch(`${API_BASE}/api/open-file/${id}?folder=${isFolder}`, { method: 'POST' });
+    },
+
+    async openFileWith(id) {
+      await fetch(`${API_BASE}/api/open-file/${id}?openWith=true`, { method: 'POST' });
+    },
+
+    async setTaskQueue(id, queueId) {
+      await fetch(`${API_BASE}/api/tasks/${id}/set-queue`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ queueId })
+      });
+      fetchTasks();
+    },
+
+    async renameTask(id, newFileName) {
+      const res = await fetch(`${API_BASE}/api/tasks/${id}/rename`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newFileName })
+      });
+      const data = await res.json();
+      if (data.error) alert(data.error);
+      fetchTasks();
     },
 
     showProgressModal(id) {
@@ -451,10 +664,15 @@
       }
     });
 
+    // Toolbar Delete button
+    document.getElementById('btn-toolbar-delete')?.addEventListener('click', () => {
+      openDeleteConfirmModal();
+    });
+
     // Table Header Select-All Checkbox
     document.querySelector('thead input[type="checkbox"]')?.addEventListener('change', (e) => {
       const checked = e.target.checked;
-      document.querySelectorAll('.task-check').forEach(chk => {
+      document.querySelectorAll('#tasks-tbody .task-check').forEach(chk => {
         chk.checked = checked;
         const id = chk.dataset.id;
         const row = document.getElementById(`row-${id}`);
@@ -466,6 +684,7 @@
           row?.classList.remove('selected');
         }
       });
+      updateSelectionUI();
     });
 
     document.getElementById('btn-speed-limiter-toggle')?.addEventListener('click', () => {
@@ -730,13 +949,153 @@
       renderTable();
     });
 
+    // Context Menu Action Handlers
+    document.getElementById('ctx-open')?.addEventListener('click', () => {
+      if (activeContextMenuTaskId) window.nexusApp.openFile(activeContextMenuTaskId, false);
+      hideContextMenu();
+    });
+
+    document.getElementById('ctx-open-with')?.addEventListener('click', () => {
+      if (activeContextMenuTaskId) window.nexusApp.openFileWith(activeContextMenuTaskId);
+      hideContextMenu();
+    });
+
+    document.getElementById('ctx-open-folder')?.addEventListener('click', () => {
+      if (activeContextMenuTaskId) window.nexusApp.openFile(activeContextMenuTaskId, true);
+      hideContextMenu();
+    });
+
+    document.getElementById('ctx-rename')?.addEventListener('click', () => {
+      hideContextMenu();
+      openRenameModal(activeContextMenuTaskId);
+    });
+
+    document.getElementById('ctx-redownload')?.addEventListener('click', () => {
+      if (activeContextMenuTaskId) window.nexusApp.redownloadTask(activeContextMenuTaskId);
+      hideContextMenu();
+    });
+
+    document.getElementById('ctx-resume')?.addEventListener('click', async () => {
+      const ids = selectedTaskIds.size > 0 ? Array.from(selectedTaskIds) : [activeContextMenuTaskId];
+      for (const id of ids) {
+        if (id) await window.nexusApp.startTask(id);
+      }
+      hideContextMenu();
+    });
+
+    document.getElementById('ctx-stop')?.addEventListener('click', async () => {
+      const ids = selectedTaskIds.size > 0 ? Array.from(selectedTaskIds) : [activeContextMenuTaskId];
+      for (const id of ids) {
+        if (id) await window.nexusApp.pauseTask(id);
+      }
+      hideContextMenu();
+    });
+
+    document.getElementById('ctx-refresh')?.addEventListener('click', () => {
+      hideContextMenu();
+      if (!activeContextMenuTaskId) return;
+      const task = tasks.find(t => t.id === activeContextMenuTaskId);
+      if (!task) return;
+      currentTrackingTaskId = activeContextMenuTaskId;
+      document.getElementById('refresh-old-url').value = task.url;
+      document.getElementById('refresh-new-url').value = '';
+      openModal('modal-refresh-url');
+    });
+
+    document.getElementById('ctx-remove')?.addEventListener('click', () => {
+      hideContextMenu();
+      openDeleteConfirmModal();
+    });
+
+    document.getElementById('ctx-queue-sublist')?.querySelectorAll('.context-menu-item').forEach(item => {
+      item.addEventListener('click', async () => {
+        const queueId = item.dataset.queue;
+        const ids = selectedTaskIds.size > 0 ? Array.from(selectedTaskIds) : [activeContextMenuTaskId];
+        for (const id of ids) {
+          if (id) await window.nexusApp.setTaskQueue(id, queueId);
+        }
+        hideContextMenu();
+      });
+    });
+
+    document.getElementById('ctx-del-from-queue')?.addEventListener('click', async () => {
+      const ids = selectedTaskIds.size > 0 ? Array.from(selectedTaskIds) : [activeContextMenuTaskId];
+      for (const id of ids) {
+        if (id) await window.nexusApp.setTaskQueue(id, null);
+      }
+      hideContextMenu();
+    });
+
+    document.getElementById('ctx-double-click-opt')?.querySelectorAll('.context-menu-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const action = item.dataset.dblAction;
+        if (action) localStorage.setItem('dblClickAction', action);
+        hideContextMenu();
+      });
+    });
+
+    document.getElementById('ctx-properties')?.addEventListener('click', () => {
+      hideContextMenu();
+      if (activeContextMenuTaskId) window.nexusApp.showProgressModal(activeContextMenuTaskId);
+    });
+
+    // Dismiss context menu on click outside, scroll or resize
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#task-context-menu')) {
+        hideContextMenu();
+      }
+    });
+
+    window.addEventListener('resize', hideContextMenu);
+    window.addEventListener('scroll', hideContextMenu, true);
+
+    // Delete Confirmation modal confirm button
+    document.getElementById('btn-confirm-delete')?.addEventListener('click', async () => {
+      const deleteFile = document.getElementById('delete-from-disk-checkbox')?.checked === true;
+      const ids = Array.from(selectedTaskIds);
+      if (ids.length === 0) return;
+
+      closeModal('modal-delete-confirm');
+      await fetch(`${API_BASE}/api/tasks/bulk-delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskIds: ids, deleteFile })
+      });
+      selectedTaskIds.clear();
+      updateSelectionUI();
+      fetchTasks();
+    });
+
+    // Rename modal submit button
+    document.getElementById('btn-submit-rename')?.addEventListener('click', async () => {
+      const newName = document.getElementById('rename-input-filename').value.trim();
+      if (!newName || !activeContextMenuTaskId) return;
+
+      closeModal('modal-rename');
+      await window.nexusApp.renameTask(activeContextMenuTaskId, newName);
+    });
+
     // Keyboard shortcuts
     window.addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n') {
         e.preventDefault();
         openModal('modal-add-url');
       }
+      if (e.key === 'Delete') {
+        if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+        if (selectedTaskIds.size > 0) {
+          e.preventDefault();
+          openDeleteConfirmModal();
+        }
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'm') {
+        if (selectedTaskIds.size > 0) {
+          e.preventDefault();
+          openRenameModal();
+        }
+      }
       if (e.key === 'Escape') {
+        hideContextMenu();
         document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
         currentTrackingTaskId = null;
       }

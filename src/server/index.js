@@ -174,6 +174,38 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 201, { task });
     }
 
+function deleteTaskFiles(task) {
+  if (!task) return;
+  if (task.savePath && fs.existsSync(task.savePath)) {
+    try { fs.unlinkSync(task.savePath); } catch (_) {}
+  }
+  try {
+    const settings = storage.getSettings();
+    const tempDir = settings.tempDir;
+    if (fs.existsSync(tempDir)) {
+      const tempFiles = fs.readdirSync(tempDir);
+      tempFiles.forEach(f => {
+        if (f.startsWith(task.id) || (task.savePath && f.startsWith(path.basename(task.savePath)))) {
+          try { fs.unlinkSync(path.join(tempDir, f)); } catch (_) {}
+        }
+      });
+    }
+  } catch (_) {}
+  if (task.savePath) {
+    try {
+      const dir = path.dirname(task.savePath);
+      const base = path.basename(task.savePath);
+      if (fs.existsSync(dir)) {
+        fs.readdirSync(dir).forEach(f => {
+          if (f.startsWith(base + '.part')) {
+            try { fs.unlinkSync(path.join(dir, f)); } catch (_) {}
+          }
+        });
+      }
+    } catch (_) {}
+  }
+}
+
     if (pathname.startsWith('/api/tasks/') && req.method === 'POST') {
       const parts = pathname.split('/');
       const taskId = parts[3];
@@ -194,6 +226,44 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 200, { success: true });
       }
 
+      if (action === 'redownload') {
+        downloader.pauseTask(taskId);
+        deleteTaskFiles(task);
+        task.downloadedBytes = 0;
+        task.status = 'queued';
+        task.segments = [];
+        storage.upsertTask(task);
+        downloader.startTask(task).catch(err => console.error(err));
+        return sendJson(res, 200, { success: true, task });
+      }
+
+      if (action === 'rename') {
+        const body = await parseJsonBody(req);
+        const newName = (body.newFileName || '').trim();
+        if (!newName) return sendJson(res, 400, { error: 'newFileName required' });
+        if (task.savePath && fs.existsSync(task.savePath)) {
+          const dir = path.dirname(task.savePath);
+          const newSavePath = path.join(dir, newName);
+          try {
+            fs.renameSync(task.savePath, newSavePath);
+            task.savePath = newSavePath;
+          } catch (e) {
+            return sendJson(res, 500, { error: 'Failed to rename on disk: ' + e.message });
+          }
+        }
+        task.fileName = newName;
+        task.categoryId = storage.determineCategory(newName);
+        storage.upsertTask(task);
+        return sendJson(res, 200, { success: true, task });
+      }
+
+      if (action === 'set-queue') {
+        const body = await parseJsonBody(req);
+        task.queueId = body.queueId || null;
+        storage.upsertTask(task);
+        return sendJson(res, 200, { success: true, task });
+      }
+
       if (action === 'refresh-url') {
         const body = await parseJsonBody(req);
         if (!body.newUrl) return sendJson(res, 400, { error: 'newUrl required' });
@@ -202,13 +272,28 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
+    if (pathname === '/api/tasks/bulk-delete' && req.method === 'POST') {
+      const body = await parseJsonBody(req);
+      const taskIds = body.taskIds || [];
+      const deleteFile = body.deleteFile === true;
+      for (const id of taskIds) {
+        downloader.pauseTask(id);
+        const task = storage.getTask(id);
+        if (task && deleteFile) {
+          deleteTaskFiles(task);
+        }
+        storage.deleteTask(id);
+      }
+      return sendJson(res, 200, { success: true, count: taskIds.length });
+    }
+
     if (pathname.startsWith('/api/tasks/') && req.method === 'DELETE') {
       const taskId = pathname.split('/')[3];
       downloader.pauseTask(taskId);
       const deleteFile = parsedUrl.searchParams.get('deleteFile') === 'true';
       const task = storage.getTask(taskId);
-      if (task && deleteFile && task.savePath && fs.existsSync(task.savePath)) {
-        try { fs.unlinkSync(task.savePath); } catch (_) {}
+      if (task && deleteFile) {
+        deleteTaskFiles(task);
       }
       storage.deleteTask(taskId);
       return sendJson(res, 200, { success: true });
@@ -292,8 +377,11 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 404, { error: 'File does not exist on disk' });
       }
       const isFolder = parsedUrl.searchParams.get('folder') === 'true';
+      const isOpenWith = parsedUrl.searchParams.get('openWith') === 'true';
       if (isFolder) {
         exec(`explorer.exe /select,"${task.savePath.replace(/\//g, '\\')}"`);
+      } else if (isOpenWith) {
+        exec(`rundll32.exe shell32.dll,OpenAs_RunDLL "${task.savePath.replace(/\//g, '\\')}"`);
       } else {
         exec(`start "" "${task.savePath.replace(/\//g, '\\')}"`);
       }

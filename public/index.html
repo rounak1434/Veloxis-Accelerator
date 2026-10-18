@@ -31,6 +31,9 @@
       <button class="btn btn-secondary" id="btn-toolbar-pause-all" title="Pause All Active Downloads">
         ⏹ Pause All
       </button>
+      <button class="btn btn-danger" id="btn-toolbar-delete" title="Delete Selected Download(s) (Del)">
+        🗑 Delete
+      </button>
       <button class="btn btn-secondary" id="btn-toolbar-batch" title="Batch Download Wizard">
         📑 Batch
       </button>
@@ -661,6 +664,150 @@
       <div class="modal-footer">
         <button class="btn btn-ghost" data-close="modal-speed-limiter">Cancel</button>
         <button class="btn btn-primary" id="btn-save-speed-limiter">Apply Limits</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right-Click Context Menu -->
+  <div id="task-context-menu" class="context-menu" style="display: none;">
+    <div class="context-menu-item" id="ctx-open">
+      <span class="ctx-icon">▶</span>
+      <span>Open</span>
+    </div>
+    <div class="context-menu-item" id="ctx-open-with">
+      <span class="ctx-icon">🗂</span>
+      <span>Open with...</span>
+    </div>
+    <div class="context-menu-item" id="ctx-open-folder">
+      <span class="ctx-icon">📁</span>
+      <span>Open folder</span>
+    </div>
+
+    <div class="context-menu-separator"></div>
+
+    <div class="context-menu-item" id="ctx-rename">
+      <span class="ctx-icon">✏</span>
+      <span>Move/Rename (Ctrl-M)</span>
+    </div>
+
+    <div class="context-menu-separator"></div>
+
+    <div class="context-menu-item" id="ctx-redownload">
+      <span class="ctx-icon">🔄</span>
+      <span>Redownload</span>
+    </div>
+    <div class="context-menu-item" id="ctx-resume">
+      <span class="ctx-icon">▶</span>
+      <span>Resume Download</span>
+    </div>
+    <div class="context-menu-item" id="ctx-stop">
+      <span class="ctx-icon">⏸</span>
+      <span>Stop Download</span>
+    </div>
+
+    <div class="context-menu-separator"></div>
+
+    <div class="context-menu-item" id="ctx-refresh">
+      <span class="ctx-icon">🔁</span>
+      <span>Refresh download address</span>
+    </div>
+
+    <div class="context-menu-separator"></div>
+
+    <div class="context-menu-item ctx-danger" id="ctx-remove">
+      <span class="ctx-icon">🗑</span>
+      <span>Remove</span>
+    </div>
+
+    <div class="context-menu-separator"></div>
+
+    <div class="context-menu-item has-submenu" id="ctx-add-to-queue">
+      <span class="ctx-icon">📥</span>
+      <span>Add to queue</span>
+      <span class="ctx-arrow">›</span>
+      <div class="context-submenu" id="ctx-queue-sublist">
+        <div class="context-menu-item" data-queue="queue-main">Main Queue</div>
+        <div class="context-menu-item" data-queue="queue-night">Night Schedule</div>
+      </div>
+    </div>
+    <div class="context-menu-item" id="ctx-del-from-queue">
+      <span class="ctx-icon">📤</span>
+      <span>Delete from queue</span>
+    </div>
+
+    <div class="context-menu-separator"></div>
+
+    <div class="context-menu-item has-submenu" id="ctx-double-click-opt">
+      <span class="ctx-icon">🖱</span>
+      <span>On Double click</span>
+      <span class="ctx-arrow">›</span>
+      <div class="context-submenu">
+        <div class="context-menu-item" data-dbl-action="open">Open file</div>
+        <div class="context-menu-item" data-dbl-action="properties">Open properties</div>
+      </div>
+    </div>
+
+    <div class="context-menu-separator"></div>
+
+    <div class="context-menu-item" id="ctx-properties">
+      <span class="ctx-icon">ℹ</span>
+      <span>Properties</span>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" id="modal-delete-confirm">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <div class="modal-title">Delete Download</div>
+        <button class="modal-close" data-close="modal-delete-confirm">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="delete-confirm-message" style="font-size: 14px; font-weight: 500; color: var(--color-text);">
+          Are you sure you want to remove the selected download(s)?
+        </p>
+        <div id="delete-files-preview" style="background-color: var(--color-surface-raised); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 8px 12px; font-family: var(--font-mono); font-size: 12px; max-height: 90px; overflow-y: auto; color: var(--color-text-muted);">
+        </div>
+
+        <div class="form-group" style="margin-top: 6px;">
+          <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; user-select: none;">
+            <input type="checkbox" id="delete-from-disk-checkbox" style="margin-top: 3px; cursor: pointer;">
+            <div>
+              <span style="font-weight: 600; color: var(--color-text);">Also delete downloaded file(s) from disk</span>
+              <div style="font-size: 11px; color: var(--color-text-muted); margin-top: 2px;">
+                Permanently erases the downloaded file and temporary chunk files from storage.
+              </div>
+            </div>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-delete-confirm">Cancel</button>
+        <button class="btn btn-danger" id="btn-confirm-delete">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Move/Rename Modal -->
+  <div class="modal-overlay" id="modal-rename">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <div class="modal-title">Move / Rename Download</div>
+        <button class="modal-close" data-close="modal-rename">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="rename-input-filename">File Name</label>
+          <input type="text" id="rename-input-filename" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="rename-input-folder">Save Directory</label>
+          <input type="text" id="rename-input-folder" class="form-input" readonly>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-rename">Cancel</button>
+        <button class="btn btn-primary" id="btn-submit-rename">Save</button>
       </div>
     </div>
   </div>
