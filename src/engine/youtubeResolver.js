@@ -309,6 +309,11 @@ function downloadMediaStream(url, options = {}, callbacks = {}) {
         });
       }
     } else {
+      if (url.toLowerCase().includes('.m3u8') && fs.existsSync(path.join(BIN_DIR, 'ffmpeg.exe'))) {
+        console.warn(`[Media Stream Resolver] yt-dlp exited with code ${code}, engaging FFmpeg direct stream fallback...`);
+        downloadHlsWithFfmpeg(url, outputTemplate, options, callbacks);
+        return;
+      }
       if (onError) {
         onError(new Error(stderr || `yt-dlp failed with exit code ${code}`));
       }
@@ -316,6 +321,11 @@ function downloadMediaStream(url, options = {}, callbacks = {}) {
   });
 
   proc.on('error', (err) => {
+    if (url.toLowerCase().includes('.m3u8') && fs.existsSync(path.join(BIN_DIR, 'ffmpeg.exe'))) {
+      console.warn(`[Media Stream Resolver] yt-dlp error (${err.message}), engaging FFmpeg direct stream fallback...`);
+      downloadHlsWithFfmpeg(url, outputTemplate, options, callbacks);
+      return;
+    }
     if (onError) onError(err);
   });
 
@@ -329,10 +339,85 @@ function downloadMediaStream(url, options = {}, callbacks = {}) {
   };
 }
 
+/**
+ * Direct FFmpeg HLS stream copy fallback for any custom or non-standard M3U8 streams
+ */
+function downloadHlsWithFfmpeg(url, outputTemplate, options = {}, callbacks = {}) {
+  const ffmpegPath = path.join(BIN_DIR, 'ffmpeg.exe');
+  const { onProgress, onComplete, onError } = callbacks;
+
+  if (!fs.existsSync(ffmpegPath)) {
+    if (onError) onError(new Error('FFmpeg not found for HLS stream fallback'));
+    return;
+  }
+
+  const destFile = outputTemplate.endsWith('.mp4') ? outputTemplate : outputTemplate.replace(/\.[^.]+$/, '') + '.mp4';
+  const headers = [
+    'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  ];
+  if (options.referrer) {
+    headers.push(`Referer: ${options.referrer}`);
+  }
+
+  const args = [
+    '-headers', headers.join('\r\n') + '\r\n',
+    '-i', url,
+    '-c', 'copy',
+    '-bsf:a', 'aac_adtstoasc',
+    '-y',
+    destFile
+  ];
+
+  console.log(`[FFmpeg Fallback] Spawning: ${ffmpegPath} ${args.join(' ')}`);
+  const proc = spawn(ffmpegPath, args, { windowsHide: true });
+
+  let stderr = '';
+  proc.stderr.on('data', chunk => {
+    stderr += chunk;
+    const match = chunk.toString().match(/size=\s*(\d+)kB\s+time=([\d:.]+)\s+bitrate=\s*([\d.]+)kbits\/s/i);
+    if (match && onProgress) {
+      const sizeKb = parseInt(match[1], 10);
+      onProgress({
+        percent: 50,
+        downloadedBytes: sizeKb * 1024,
+        fileSize: sizeKb * 1024,
+        speed: 1500000,
+        destination: destFile
+      });
+    }
+  });
+
+  proc.on('close', (code) => {
+    if (code === 0 && fs.existsSync(destFile)) {
+      const size = fs.statSync(destFile).size;
+      if (onComplete) {
+        onComplete({
+          destination: destFile,
+          fileSize: size
+        });
+      }
+    } else {
+      if (onError) onError(new Error(`FFmpeg fallback failed with code ${code}: ${stderr.slice(-300)}`));
+    }
+  });
+
+  proc.on('error', (err) => {
+    if (onError) onError(err);
+  });
+
+  return {
+    proc,
+    cancel: () => {
+      try { proc.kill('SIGTERM'); } catch (_) {}
+    }
+  };
+}
+
 module.exports = {
   isYouTubeUrl,
   isStreamUrl,
   getVideoInfo,
   downloadYouTube: downloadMediaStream,
-  downloadMediaStream
+  downloadMediaStream,
+  downloadHlsWithFfmpeg
 };

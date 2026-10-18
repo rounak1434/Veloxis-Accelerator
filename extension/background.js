@@ -61,27 +61,35 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
     const ext = pathname.split('.').pop();
 
     if (INTERCEPT_EXTENSIONS.includes(ext)) {
-      // Cancel browser's standard download
-      chrome.downloads.cancel(downloadItem.id, () => {
-        chrome.downloads.erase({ id: downloadItem.id });
-      });
+      try {
+        // Send to Veloxis Desktop Accelerator
+        const response = await fetch(`${DAEMON_URL}/api/tasks`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: url,
+            referrer: downloadItem.referrer || '',
+            fileSize: downloadItem.fileSize || 0,
+            immediate: true
+          })
+        });
 
-      // Send to Veloxis Desktop Accelerator
-      await fetch(`${DAEMON_URL}/api/tasks`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          url: url,
-          referrer: downloadItem.referrer || '',
-          fileSize: downloadItem.fileSize || 0,
-          immediate: true
-        })
-      });
-
-      console.log('[Veloxis] Intercepted and routed to desktop accelerator:', url);
+        if (response.ok) {
+          // Only cancel browser's standard download when desktop accelerator has received the task
+          chrome.downloads.cancel(downloadItem.id, () => {
+            chrome.downloads.erase({ id: downloadItem.id });
+          });
+          console.log('[Veloxis] Intercepted and routed to desktop accelerator:', url);
+        } else {
+          console.warn('[Veloxis] Accelerator daemon returned non-200, letting browser download proceed.');
+        }
+      } catch (fetchErr) {
+        // Daemon is offline or restarting - silently allow browser's native download to proceed
+        console.warn('[Veloxis] Desktop accelerator offline, allowing browser download to continue normally.');
+      }
     }
   } catch (err) {
-    console.error('[Veloxis] Failed to intercept download:', err);
+    console.warn('[Veloxis] Download check:', err?.message || err);
   }
 });
 

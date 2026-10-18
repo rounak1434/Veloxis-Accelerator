@@ -359,6 +359,18 @@
       });
     });
 
+    // Always offer Web Page Stream (Auto HD) option as universal fallback
+    const pageUrl = window.location.href;
+    const pageAlreadyListed = detectedLocalStreams.some(s => s.url === pageUrl);
+    if (!pageAlreadyListed) {
+      detectedLocalStreams.push({
+        url: pageUrl,
+        type: 'auto',
+        label: 'Web Page Video Stream (Auto HD)',
+        ext: 'mp4'
+      });
+    }
+
     let itemsHtml = '';
     if (detectedLocalStreams.length > 0) {
       detectedLocalStreams.forEach((s, idx) => {
@@ -474,7 +486,8 @@
               pillText.textContent = `Download Video`;
             }, 4000);
           } else {
-            pillText.textContent = `Error queueing`;
+            const err = (res && res.error) || '';
+            pillText.textContent = err.includes('offline') || err.includes('reachable') ? 'App Offline!' : 'Error queueing';
             setTimeout(() => {
               pillText.textContent = `Download Video`;
             }, 3000);
