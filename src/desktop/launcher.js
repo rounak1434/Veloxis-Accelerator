@@ -38,37 +38,50 @@ function launchAppWindow() {
 }
 
 async function main() {
-  console.log('======================================================');
-  console.log('           VELOXIS ACCELERATOR DESKTOP                ');
-  console.log('======================================================\n');
+  const isBackground = process.argv.includes('--background') || process.argv.includes('--silent');
+  
+  if (!isBackground) {
+    console.log('======================================================');
+    console.log('           VELOXIS ACCELERATOR DESKTOP                ');
+    console.log('======================================================\n');
+  }
 
   const running = await isServerRunning();
   if (running) {
-    console.log(`[Veloxis] Background accelerator already active at ${DAEMON_URL}`);
-    console.log('[Veloxis] Launching desktop application window...');
-    launchAppWindow();
+    if (!isBackground) {
+      console.log(`[Veloxis] Background accelerator already active at ${DAEMON_URL}`);
+      console.log('[Veloxis] Launching desktop application window...');
+      launchAppWindow();
+    }
     return;
   }
 
-  console.log('[Veloxis] Starting download acceleration engine...');
+  if (!isBackground) {
+    console.log('[Veloxis] Starting download acceleration engine...');
+  }
+
   // Require and start the server
   require('../server/index');
 
   // Wait for server to be responsive
   let ready = false;
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 25; i++) {
     await new Promise(r => setTimeout(r, 200));
     ready = await isServerRunning();
     if (ready) break;
   }
 
   if (ready) {
-    console.log(`[Veloxis] Engine active on ${DAEMON_URL}`);
-    console.log('[Veloxis] Opening desktop application window...');
-    launchAppWindow();
-    console.log('\n[Ready] Veloxis is running in the background.');
-    console.log('[Info]  Browser downloads and stream captures are actively accelerated.');
-    console.log('[Exit]  Press Ctrl+C to stop Veloxis.\n');
+    if (!isBackground) {
+      console.log(`[Veloxis] Engine active on ${DAEMON_URL}`);
+      console.log('[Veloxis] Opening desktop application window...');
+      launchAppWindow();
+      console.log('\n[Ready] Veloxis is running in the background.');
+      console.log('[Info]  Browser downloads and stream captures are actively accelerated.');
+      console.log('[Exit]  Press Ctrl+C or use Settings > Exit to stop Veloxis.\n');
+    } else {
+      console.log(`[Veloxis] Background service active at ${DAEMON_URL}`);
+    }
   } else {
     console.error('[Veloxis] Timed out waiting for server to start.');
   }

@@ -121,6 +121,18 @@
       if (speedLimitLabel) {
         speedLimitLabel.textContent = settings.speedLimitEnabled ? `${Math.round(settings.speedLimitBytesPerSec / 1024)} KB/s` : 'Off';
       }
+      if (document.getElementById('opt-speed-limit-val') && settings.speedLimitBytesPerSec) {
+        document.getElementById('opt-speed-limit-val').value = Math.round(settings.speedLimitBytesPerSec / 1024);
+      }
+      if (document.getElementById('opt-max-connections') && settings.maxSegmentsPerDownload) {
+        document.getElementById('opt-max-connections').value = String(settings.maxSegmentsPerDownload);
+      }
+      if (document.getElementById('opt-file-extensions') && settings.interceptExtensions) {
+        document.getElementById('opt-file-extensions').value = settings.interceptExtensions.join(' ');
+      }
+      if (document.getElementById('opt-default-dir') && settings.defaultDownloadDir) {
+        document.getElementById('opt-default-dir').value = settings.defaultDownloadDir;
+      }
     } catch (err) {
       console.error('Failed to fetch settings:', err);
     }
@@ -942,6 +954,37 @@
         const target = document.getElementById(btn.dataset.tab);
         if (target) target.style.display = 'block';
       });
+    });
+
+    // S06 Save Settings button
+    document.getElementById('btn-save-settings')?.addEventListener('click', async () => {
+      const maxSegments = parseInt(document.getElementById('opt-max-connections')?.value || '8', 10);
+      const speedLimitKb = parseInt(document.getElementById('opt-speed-limit-val')?.value || '500', 10);
+      const extensions = (document.getElementById('opt-file-extensions')?.value || '').split(/[\s,]+/).filter(Boolean);
+      const defaultDir = document.getElementById('opt-default-dir')?.value?.trim();
+
+      await fetch(`${API_BASE}/api/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          maxSegmentsPerDownload: maxSegments,
+          speedLimitBytesPerSec: speedLimitKb * 1024,
+          interceptExtensions: extensions.length > 0 ? extensions : undefined,
+          defaultDownloadDir: defaultDir || undefined
+        })
+      });
+      closeModal('modal-options');
+      fetchSettings();
+    });
+
+    // Exit Background Application
+    document.getElementById('btn-shutdown-engine')?.addEventListener('click', async () => {
+      if (confirm('Are you sure you want to stop the Veloxis background engine and exit?')) {
+        try {
+          await fetch(`${API_BASE}/api/shutdown`, { method: 'POST' });
+        } catch (_) {}
+        window.close();
+      }
     });
 
     // Search input

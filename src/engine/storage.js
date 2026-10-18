@@ -1,9 +1,16 @@
 const fs = require('fs');
 const path = require('path');
 
-const DB_FILE = fs.existsSync(path.join(process.cwd(), 'data'))
-  ? path.join(process.cwd(), 'data', 'db.json')
-  : path.join(__dirname, '..', '..', 'data', 'db.json');
+const ROOT_DIR = process.pkg ? path.dirname(process.execPath) : path.join(__dirname, '..', '..');
+const DATA_DIR = fs.existsSync(path.join(ROOT_DIR, 'data'))
+  ? path.join(ROOT_DIR, 'data')
+  : (fs.existsSync(path.join(process.cwd(), 'data')) ? path.join(process.cwd(), 'data') : path.join(ROOT_DIR, 'data'));
+
+if (!fs.existsSync(DATA_DIR)) {
+  try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch (_) {}
+}
+
+const DB_FILE = path.join(DATA_DIR, 'db.json');
 
 const DEFAULT_CATEGORIES = [
   { id: 'cat-comp', name: 'Compressed', extensions: ['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz', 'iso'], folder: 'Compressed' },
@@ -36,12 +43,16 @@ const DEFAULT_QUEUES = [
   }
 ];
 
+const userDownloads = process.env.USERPROFILE
+  ? path.join(process.env.USERPROFILE, 'Downloads')
+  : path.join(ROOT_DIR, 'downloads');
+
 const DEFAULT_SETTINGS = {
   maxSegmentsPerDownload: 8,
   speedLimitEnabled: false,
   speedLimitBytesPerSec: 500 * 1024, // 500 KB/s
-  defaultDownloadDir: path.join(__dirname, '..', '..', 'downloads'),
-  tempDir: path.join(__dirname, '..', '..', 'downloads', '.temp'),
+  defaultDownloadDir: userDownloads,
+  tempDir: path.join(userDownloads, '.veloxis_temp'),
   clipboardMonitor: true,
   browserIntegration: true,
   interceptExtensions: ['zip', 'rar', '7z', 'iso', 'exe', 'msi', 'mp4', 'mkv', 'mp3', 'flac', 'pdf', 'tar', 'gz'],

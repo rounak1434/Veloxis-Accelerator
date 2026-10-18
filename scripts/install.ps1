@@ -62,6 +62,20 @@ $smShortcut.WorkingDirectory = $targetDir
 $smShortcut.Description = "Veloxis Download Accelerator"
 $smShortcut.Save()
 
+# Windows Startup Shortcut (Starts in Background on PC Turn On)
+$startupDir = [System.Environment]::GetFolderPath('Startup')
+$startupShortcutPath = Join-Path $startupDir "Veloxis Accelerator.lnk"
+$stShortcut = $wshShell.CreateShortcut($startupShortcutPath)
+$stShortcut.TargetPath = $installedExe
+$stShortcut.Arguments = "--background"
+$stShortcut.WorkingDirectory = $targetDir
+$stShortcut.Description = "Veloxis Download Accelerator Background Service"
+$stShortcut.Save()
+
+# Windows Registry Run Key (Auto-start on PC boot)
+$runKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+Set-ItemProperty -Path $runKey -Name "Veloxis Accelerator" -Value "`"$installedExe`" --background"
+
 # Create uninstaller script
 $uninstallerBat = Join-Path $targetDir "uninstall.bat"
 $uninstallContent = @"
@@ -75,7 +89,7 @@ set /p confirm="Are you sure you want to uninstall Veloxis Accelerator? (Y/N): "
 if /i "%confirm%" neq "Y" exit /b 0
 
 echo Removing shortcuts and registry entries...
-powershell -NoProfile -Command "Remove-Item -Path '$desktopShortcutPath' -Force -ErrorAction SilentlyContinue; Remove-Item -Path '$startMenuDir' -Recurse -Force -ErrorAction SilentlyContinue; Remove-Item -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\VeloxisAccelerator' -Recurse -Force -ErrorAction SilentlyContinue;"
+powershell -NoProfile -Command "Remove-Item -Path '$desktopShortcutPath' -Force -ErrorAction SilentlyContinue; Remove-Item -Path '$startMenuDir' -Recurse -Force -ErrorAction SilentlyContinue; Remove-Item -Path '$startupShortcutPath' -Force -ErrorAction SilentlyContinue; Remove-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name 'Veloxis Accelerator' -ErrorAction SilentlyContinue; Remove-Item -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\VeloxisAccelerator' -Recurse -Force -ErrorAction SilentlyContinue;"
 echo.
 echo Veloxis Accelerator has been uninstalled from your system.
 echo You may now close this window or delete this folder.

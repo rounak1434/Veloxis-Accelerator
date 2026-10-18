@@ -171,7 +171,11 @@
             <span class="stat-badge" id="stat-active-count">0</span>
           </div>
         </div>
-        <div>
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--color-text-muted);">
+            <span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; display: inline-block; box-shadow: 0 0 6px rgba(16,185,129,0.6);"></span>
+            Background Engine Active (Port 6789)
+          </span>
           <span>Engine: Dynamic Multipart (8x Chunks)</span>
         </div>
       </footer>
@@ -380,6 +384,27 @@
               <input type="checkbox" id="opt-browser-integration" checked>
               <span>Enable browser extension Native Messaging integration</span>
             </label>
+          </div>
+          <div class="form-group" style="margin-top: 10px;">
+            <label style="display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" id="opt-auto-startup" checked disabled>
+              <span>Start automatically when Windows turns on (Background Mode)</span>
+            </label>
+            <span class="form-help">Configured in Windows Startup folder and Registry Run key for silent boot</span>
+          </div>
+          <div class="form-group" style="margin-top: 10px;">
+            <label style="display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" id="opt-background-active" checked disabled>
+              <span>Keep running in background when window is closed</span>
+            </label>
+            <span class="form-help">Closing the app window keeps the engine listening on port 6789 for browser downloads</span>
+          </div>
+          <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-weight: 600; font-size: 13px; color: var(--color-text);">Exit Background Application</div>
+              <div style="font-size: 11px; color: var(--color-text-muted);">Completely terminates the acceleration daemon and closes port 6789.</div>
+            </div>
+            <button class="btn btn-danger" id="btn-shutdown-engine" type="button">Exit Application</button>
           </div>
         </div>
 

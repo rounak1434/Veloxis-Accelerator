@@ -9,9 +9,10 @@ const queueManager = require('../engine/queueManager');
 const youtubeResolver = require('../engine/youtubeResolver');
 
 const PORT = process.env.PORT || 6789;
-const PUBLIC_DIR = fs.existsSync(path.join(process.cwd(), 'public'))
-  ? path.join(process.cwd(), 'public')
-  : path.join(__dirname, '..', '..', 'public');
+const ROOT_DIR = process.pkg ? path.dirname(process.execPath) : path.join(__dirname, '..', '..');
+const PUBLIC_DIR = fs.existsSync(path.join(ROOT_DIR, 'public'))
+  ? path.join(ROOT_DIR, 'public')
+  : (fs.existsSync(path.join(process.cwd(), 'public')) ? path.join(process.cwd(), 'public') : path.join(ROOT_DIR, 'public'));
 
 // MIME types for static files
 const MIME_TYPES = {
@@ -287,6 +288,14 @@ function deleteTaskFiles(task) {
         storage.deleteTask(id);
       }
       return sendJson(res, 200, { success: true, count: taskIds.length });
+    }
+
+    if (pathname === '/api/shutdown' && req.method === 'POST') {
+      sendJson(res, 200, { success: true, message: 'Veloxis shutting down' });
+      setTimeout(() => {
+        process.exit(0);
+      }, 500);
+      return;
     }
 
     if (pathname.startsWith('/api/tasks/') && req.method === 'DELETE') {

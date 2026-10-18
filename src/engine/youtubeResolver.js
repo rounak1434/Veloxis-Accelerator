@@ -2,7 +2,10 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-const BIN_DIR = path.join(__dirname, '..', '..', 'bin');
+const ROOT_DIR = process.pkg ? path.dirname(process.execPath) : path.join(__dirname, '..', '..');
+const BIN_DIR = fs.existsSync(path.join(ROOT_DIR, 'bin'))
+  ? path.join(ROOT_DIR, 'bin')
+  : (fs.existsSync(path.join(process.cwd(), 'bin')) ? path.join(process.cwd(), 'bin') : path.join(ROOT_DIR, 'bin'));
 const YTDLP_PATH = path.join(BIN_DIR, 'yt-dlp.exe');
 const NODE_PATH = process.execPath;
 
@@ -147,7 +150,7 @@ function getVideoInfo(url, options = {}) {
 function downloadMediaStream(url, options = {}, callbacks = {}) {
   const {
     formatId = 'bestvideo+bestaudio/best',
-    outputDir = path.join(__dirname, '..', '..', 'downloads'),
+    outputDir = path.join(process.env.USERPROFILE || ROOT_DIR, 'Downloads'),
     filename = null,
     referrer = null
   } = options;
