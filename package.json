@@ -11,7 +11,8 @@
     "lint-listing": "node scripts/listing.js replica/launch/listing.json",
     "start": "node src/server/index.js",
     "desktop": "node src/desktop/launcher.js",
-    "package": "node scripts/package-exe.js"
+    "package": "node scripts/package-exe.js",
+    "setup": "node scripts/build-setup.js"
   },
   "keywords": [],
   "author": "",
@@ -22,6 +23,7 @@
     "ws": "^8.22.0"
   },
   "devDependencies": {
+    "innosetup-compiler": "^6.3.1",
     "pkg": "^5.8.1"
   }
 }
