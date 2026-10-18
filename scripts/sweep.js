@@ -6,7 +6,7 @@ const SKIP_DIRS = new Set([
 ]);
 
 const SKIP_FILES = new Set([
-  'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'bun.lockb', 'db.json'
+  'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'bun.lockb', 'db.json', 'README.md'
 ]);
 
 const configPath = path.join(__dirname, '..', 'replica', 'brand.json');
@@ -52,6 +52,8 @@ function scanDir(dir) {
       }
       scanDir(fullPath);
     } else {
+      if (SKIP_FILES.has(file)) continue;
+
       // Check file name
       for (const p of patterns) {
         if (p.regex.test(file)) {
